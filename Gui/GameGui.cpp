@@ -222,7 +222,7 @@ void GameGui::updatePlayerDisplay() {
         
         // Update coin and influence counts
         players[i].coinsText.setString("Coins: " + std::to_string(players[i].coins));
-        players[i].influenceText.setString("Cards: " + std::to_string(players[i].influence));
+        //players[i].influenceText.setString("Cards: " + std::to_string(players[i].influence));
     }
 }
 
@@ -245,13 +245,14 @@ void GameGui::handleMouseClick(sf::Vector2i mousePos) {
         }
     }
     
-    // Handle challenge/block/allow buttons
+    // Handle block/allow buttons
     if (gamePhase == 2) {
-        if (isPointInButton(mousePos, challengeButton)) {
-            updateInfoPanel("Action challenged! Resolving...");
-            gamePhase = 0;
-            nextPlayer();
-        } else if (isPointInButton(mousePos, blockButton)) {
+        // if (isPointInButton(mousePos, challengeButton)) {
+        //     updateInfoPanel("Action challenged! Resolving...");
+        //     gamePhase = 0;
+        //     nextPlayer();
+        //}
+        if (isPointInButton(mousePos, blockButton)) {
             updateInfoPanel("Action blocked!");
             gamePhase = 0;
             nextPlayer();
@@ -278,16 +279,16 @@ void GameGui::executeAction(GameAction action) {
     std::string actionName;
     
     switch (action) {
-        case GameAction::INCOME:
+        case GameAction::GATHER:
             players[currentPlayer].coins += 1;
-            actionName = "Income";
+            actionName = "Gather";
             gamePhase = 0;
             nextPlayer();
             break;
             
-        case GameAction::FOREIGN_AID:
+        case GameAction::TAX:
             players[currentPlayer].coins += 2;
-            actionName = "Foreign Aid";
+            actionName = "Tax";
             gamePhase = 2; // Others can block
             break;
             
@@ -302,16 +303,16 @@ void GameGui::executeAction(GameAction action) {
             }
             break;
             
-        case GameAction::TAX:
+        case GameAction::BRIBE:
             players[currentPlayer].coins += 3;
-            actionName = "Tax (Duke)";
+            actionName = "Bribe";
             gamePhase = 2; // Can be challenged
             break;
             
-        case GameAction::ASSASSINATE:
+        case GameAction::ARREST:
             if (players[currentPlayer].coins >= 3) {
                 players[currentPlayer].coins -= 3;
-                actionName = "Assassinate";
+                actionName = "Arrest";
                 gamePhase = 2; // Can be challenged/blocked
             } else {
                 updateInfoPanel("Not enough coins for Assassinate!");
@@ -319,22 +320,19 @@ void GameGui::executeAction(GameAction action) {
             }
             break;
             
-        case GameAction::EXCHANGE:
-            actionName = "Exchange (Ambassador)";
+        case GameAction::SANCTION:
+            actionName = "Sanction";
             gamePhase = 2; // Can be challenged
             break;
             
-        case GameAction::STEAL:
-            actionName = "Steal (Captain)";
-            gamePhase = 2; // Can be challenged/blocked
-            break;
+        
     }
     
     updateInfoPanel(players[currentPlayer].name + " chose " + actionName);
     updatePlayerDisplay();
     
     if (gamePhase == 2) {
-        phaseText.setString("Phase: Challenge/Block Response");
+        phaseText.setString("Phase: Block Response");
         instructionText.setString("Other players can challenge or block:");
     }
 }
@@ -381,7 +379,7 @@ void GameGui::draw() {
         window.draw(players[i].playerCard);
         window.draw(players[i].nameText);
         window.draw(players[i].coinsText);
-        window.draw(players[i].influenceText);
+        //window.draw(players[i].influenceText);
     }
     
     // Draw action buttons
@@ -396,8 +394,8 @@ void GameGui::draw() {
     
     // Draw challenge/block buttons if in appropriate phase
     if (gamePhase == 2) {
-        window.draw(challengeButton);
-        window.draw(challengeButtonText);
+        //window.draw(challengeButton);
+        //window.draw(challengeButtonText);
         window.draw(blockButton);
         window.draw(blockButtonText);
         window.draw(allowButton);
