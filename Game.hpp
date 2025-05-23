@@ -16,7 +16,11 @@ class Game{
         Game& operator=(const Game&) = delete;
     public:
         static Game& instance();
-        void add_player(Player* p);
+
+        std::vector<Player*>& get_players();
+        int get_turn();
+        //void add_player(Player* p);
+        void make_action();
 
 
 };

@@ -7,17 +7,19 @@
         _coins = 0;
         _name = name;
         _is_sanction = false;
-        _last_arrested = nullptr;
+        //_last_arrested = nullptr;
+        _is_active = true;
     }
     Player::Player(Player& other){
         _coins = other._coins;
         _name = other._name;
         _is_sanction = other._is_sanction;
+        _is_active = other._is_active;
         //_last_arrested = other._last_arrested;
-        _last_arrested = other._last_arrested ? new Player(*other._last_arrested) : nullptr;
+        //_last_arrested = other._last_arrested ? new Player(*other._last_arrested) : nullptr;
     }
     Player::~Player(){
-         delete _last_arrested ;
+         //delete _last_arrested ;
     }
 
     Player& Player::operator=(Player& other) {
@@ -25,12 +27,35 @@
             _coins = other._coins;
             _name = other._name;
             _is_sanction = other._is_sanction;
+            _is_active = other._is_active;
             //delete _last_arrested;
-            _last_arrested = other._last_arrested ? new Player(*other._last_arrested) : nullptr;
+            //_last_arrested = other._last_arrested ? new Player(*other._last_arrested) : nullptr;
         }
         return *this;
     }
     
+    std::string Player::get_name(){
+        return _name;
+    }
+    int Player::get_coins(){
+        return _coins;
+    }
+    bool Player::get_isSanction(){
+        return _is_sanction;
+    }
+    bool Player::get_isActive(){
+        return _is_active;
+    }
+
+    void Player::set_name(const std::string& name){
+        _name = name;
+    }
+    void Player::set_coins(const int coins){
+        _coins = coins;
+    }
+     void Player::set_isActive(const bool isActive){
+        _is_active = isActive;
+    }
 
     void Player::gather(){
         if(!_is_sanction){
@@ -52,7 +77,7 @@
     void Player::arrest(Player& other){
         _coins++;
         other._coins--;   
-        other._last_arrested = this;
+        //other._last_arrested = this;
         if(dynamic_cast<General*>(&other)){
             _coins--;
             other._coins++;

@@ -4,6 +4,6 @@
 
 int main (void)
 {
-   //player_selection();
+   player_selection();
    return 0;
 }

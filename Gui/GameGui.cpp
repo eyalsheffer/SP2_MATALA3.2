@@ -1,5 +1,6 @@
 #include "GameGui.hpp"
 #include <iostream>
+//#include <string>
 #include <cmath>
 
 GameGui::GameGui(int playerCount) 
@@ -7,8 +8,9 @@ GameGui::GameGui(int playerCount)
     , font()
     , fontLoaded(false)
     , numPlayers(playerCount)
-    , currentPlayer(0)
-    , gamePhase(0)
+    // , currentPlayer(0)
+    , game(&Game::instance())
+    //, gamePhase(0)
     
 {
     // Try to load font
@@ -39,13 +41,13 @@ void GameGui::initializeColors() {
 }
 
 void GameGui::initializePlayers() {
-    players.resize(numPlayers);
+    game->get_players().resize(numPlayers);//
     
     for (int i = 0; i < numPlayers; i++) {
-        players[i].name = "Player " + std::to_string(i + 1);
-        players[i].coins = 0;  // Starting coins in Coup
+        game->get_players()[i]->set_name("Player " + std::to_string(i + 1));
+        game->get_players()[i]->set_coins(0);  // Starting coins in Coup
         // players[i].influence = 2;  // Starting influence cards
-        players[i].isActive = true;
+        game->get_players()[i]->set_isActive(true);
     }
     
     setupPlayerPositions();
@@ -60,28 +62,28 @@ void GameGui::setupPlayerPositions() {
     for (int i = 0; i < numPlayers; i++) {
         float angle = (2.0f * M_PI * i) / numPlayers - M_PI / 2; // Start from top
         
-        players[i].position.x = centerX + radius * cos(angle) - 80; // Offset for card width
-        players[i].position.y = centerY + radius * sin(angle) - 60; // Offset for card height
+        playersGui[i].position.x = centerX + radius * cos(angle) - 80; // Offset for card width
+        playersGui[i].position.y = centerY + radius * sin(angle) - 60; // Offset for card height
         
         // Player card background
-        players[i].playerCard.setSize(sf::Vector2f(160, 120));
-        players[i].playerCard.setPosition(players[i].position);
-        players[i].playerCard.setFillColor(inactivePlayerColor);
+        playersGui[i].playerCard.setSize(sf::Vector2f(160, 120));
+        playersGui[i].playerCard.setPosition(playersGui[i].position);
+        playersGui[i].playerCard.setFillColor(inactivePlayerColor);
         
         // Player name
-        players[i].nameText.setString(players[i].name);
-        if (fontLoaded) players[i].nameText.setFont(font);
-        players[i].nameText.setCharacterSize(16);
-        players[i].nameText.setFillColor(textColor);
-        players[i].nameText.setStyle(sf::Text::Bold);
-        players[i].nameText.setPosition(players[i].position.x + 10, players[i].position.y + 10);
+        playersGui[i].nameText.setString(game->get_players()[i]->get_name());
+        if (fontLoaded) playersGui[i].nameText.setFont(font);
+        playersGui[i].nameText.setCharacterSize(16);
+        playersGui[i].nameText.setFillColor(textColor);
+        playersGui[i].nameText.setStyle(sf::Text::Bold);
+        playersGui[i].nameText.setPosition(playersGui[i].position.x + 10, playersGui[i].position.y + 10);
         
         // Coins display
-        players[i].coinsText.setString("Coins: " + std::to_string(players[i].coins));
-        if (fontLoaded) players[i].coinsText.setFont(font);
-        players[i].coinsText.setCharacterSize(14);
-        players[i].coinsText.setFillColor(sf::Color(255, 215, 0)); // Gold
-        players[i].coinsText.setPosition(players[i].position.x + 10, players[i].position.y + 40);
+        playersGui[i].coinsText.setString("Coins: " + std::to_string(game->get_players()[i]->get_coins()));
+        if (fontLoaded) playersGui[i].coinsText.setFont(font);
+        playersGui[i].coinsText.setCharacterSize(14);
+        playersGui[i].coinsText.setFillColor(sf::Color(255, 215, 0)); // Gold
+        playersGui[i].coinsText.setPosition(playersGui[i].position.x + 10, playersGui[i].position.y + 40);
         
         // Influence display
         // players[i].influenceText.setString("Cards: " + std::to_string(players[i].influence));
@@ -214,20 +216,20 @@ void GameGui::initializeActionButtons() {
 void GameGui::updatePlayerDisplay() {
     for (int i = 0; i < numPlayers; i++) {
         // Update colors based on current player
-        if (i == currentPlayer) {
-            players[i].playerCard.setFillColor(activePlayerColor);
+        if (i == game->get_turn()) {
+            playersGui[i].playerCard.setFillColor(activePlayerColor);
         } else {
-            players[i].playerCard.setFillColor(inactivePlayerColor);
+            playersGui[i].playerCard.setFillColor(inactivePlayerColor);
         }
         
         // Update coin and influence counts
-        players[i].coinsText.setString("Coins: " + std::to_string(players[i].coins));
+        playersGui[i].coinsText.setString("Coins: " + std::to_string(game->get_players()[i]->get_coins()));
         //players[i].influenceText.setString("Cards: " + std::to_string(players[i].influence));
     }
 }
 
 void GameGui::updateCurrentPlayerDisplay() {
-    currentPlayerText.setString("Current Player: " + players[currentPlayer].name);
+    currentPlayerText.setString("Current Player: " + game->get_players()[game->get_turn()]->get_name());
 }
 
 bool GameGui::isPointInButton(sf::Vector2i point, const sf::RectangleShape& button) {
@@ -236,32 +238,32 @@ bool GameGui::isPointInButton(sf::Vector2i point, const sf::RectangleShape& butt
 }
 
 void GameGui::handleMouseClick(sf::Vector2i mousePos) {
-    if (gamePhase == 0) { // Action selection phase
+    //if (gamePhase == 0) { // Action selection phase
         for (size_t i = 0; i < actionButtons.size(); i++) {
             if (isPointInButton(mousePos, actionButtons[i])) {
                 executeAction(availableActions[i]);
                 return;
             }
         }
-    }
+    //}
     
     // Handle block/allow buttons
-    if (gamePhase == 2) {
-        // if (isPointInButton(mousePos, challengeButton)) {
-        //     updateInfoPanel("Action challenged! Resolving...");
-        //     gamePhase = 0;
-        //     nextPlayer();
-        //}
-        if (isPointInButton(mousePos, blockButton)) {
-            updateInfoPanel("Action blocked!");
-            gamePhase = 0;
-            nextPlayer();
-        } else if (isPointInButton(mousePos, allowButton)) {
-            updateInfoPanel("Action allowed.");
-            gamePhase = 0;
-            nextPlayer();
-        }
-    }
+    // if (gamePhase == 2) {
+    //     // if (isPointInButton(mousePos, challengeButton)) {
+    //     //     updateInfoPanel("Action challenged! Resolving...");
+    //     //     gamePhase = 0;
+    //     //     nextPlayer();
+    //     //}
+    //     if (isPointInButton(mousePos, blockButton)) {
+    //         updateInfoPanel("Action blocked!");
+    //         gamePhase = 0;
+    //         nextPlayer();
+    //     } else if (isPointInButton(mousePos, allowButton)) {
+    //         updateInfoPanel("Action allowed.");
+    //         gamePhase = 0;
+    //         nextPlayer();
+    //     }
+    // }
 }
 
 void GameGui::handleMouseMove(sf::Vector2i mousePos) {
@@ -277,68 +279,65 @@ void GameGui::handleMouseMove(sf::Vector2i mousePos) {
 
 void GameGui::executeAction(GameAction action) {
     std::string actionName;
-    
+    game->make_action();
     switch (action) {
         case GameAction::GATHER:
-            players[currentPlayer].coins += 1;
-            actionName = "Gather";
-            gamePhase = 0;
-            nextPlayer();
+            // game->get_players()[game->get_turn()]->gather();
+            // ///players[currentPlayer].coins += 1;
+            // actionName = "Gather";
+            // //gamePhase = 0;
+            // nextPlayer();
             break;
+    
             
         case GameAction::TAX:
-            players[currentPlayer].coins += 2;
-            actionName = "Tax";
-            gamePhase = 2; // Others can block
+            // game->get_players()[game->get_turn()]->tax();
+            // //players[currentPlayer].coins += 2;
+            // actionName = "Tax";
+            // gamePhase = 2; // Others can block
             break;
             
         case GameAction::COUP:
-            if (players[currentPlayer].coins >= 7) {
-                players[currentPlayer].coins -= 7;
-                actionName = "Coup";
-                gamePhase = 1; // Target selection needed
-            } else {
-                updateInfoPanel("Not enough coins for Coup!");
-                return;
-            }
+        // game->get_players()[game->get_turn()]->coup();
+        //     //players[currentPlayer].coins -= 7;
+        //     actionName = "Coup";
+        //     gamePhase = 1; // Target selection needed
             break;
             
         case GameAction::BRIBE:
-            players[currentPlayer].coins += 3;
-            actionName = "Bribe";
-            gamePhase = 2; // Can be challenged
+        // game->get_players()[game->get_turn()]->bribe();
+        //     //players[currentPlayer].coins += 3;
+        //     actionName = "Bribe";
+        //     gamePhase = 2; // Can be challenged
             break;
             
         case GameAction::ARREST:
-            if (players[currentPlayer].coins >= 3) {
-                players[currentPlayer].coins -= 3;
-                actionName = "Arrest";
-                gamePhase = 2; // Can be challenged/blocked
-            } else {
-                updateInfoPanel("Not enough coins for Assassinate!");
-                return;
-            }
+        // game->get_players()[game->get_turn()]->arrest();
+        //     //players[currentPlayer].coins -= 3;
+        //     actionName = "Arrest";
+        //     gamePhase = 2; // Can be challenged/blocked     
             break;
             
         case GameAction::SANCTION:
-            actionName = "Sanction";
-            gamePhase = 2; // Can be challenged
+            // game->get_players()[game->get_turn()]->sanction();
+            // actionName = "Sanction";
+            // gamePhase = 2; 
             break;
             
         
     }
     
-    updateInfoPanel(players[currentPlayer].name + " chose " + actionName);
+    updateInfoPanel(game->get_players()[game->get_turn()]->get_name() + " chose " + actionName);
     updatePlayerDisplay();
-    
-    if (gamePhase == 2) {
-        phaseText.setString("Phase: Block Response");
-        instructionText.setString("Other players can challenge or block:");
-    }
+////checkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
+    // if (gamePhase == 2) {
+    //     phaseText.setString("Phase: Block Response");
+    //     instructionText.setString("Other players can challenge or block:");
+    // }
 }
 
 void GameGui::nextPlayer() {
-    currentPlayer = (currentPlayer + 1) % numPlayers;
+    //currentPlayer = (currentPlayer + 1) % numPlayers;
     updateCurrentPlayerDisplay();
     updatePlayerDisplay();
     
@@ -376,9 +375,9 @@ void GameGui::draw() {
     
     // Draw players
     for (int i = 0; i < numPlayers; i++) {
-        window.draw(players[i].playerCard);
-        window.draw(players[i].nameText);
-        window.draw(players[i].coinsText);
+        window.draw(playersGui[i].playerCard);
+        window.draw(playersGui[i].nameText);
+        window.draw(playersGui[i].coinsText);
         //window.draw(players[i].influenceText);
     }
     
@@ -393,14 +392,14 @@ void GameGui::draw() {
     window.draw(infoPanelText);
     
     // Draw challenge/block buttons if in appropriate phase
-    if (gamePhase == 2) {
-        //window.draw(challengeButton);
-        //window.draw(challengeButtonText);
-        window.draw(blockButton);
-        window.draw(blockButtonText);
-        window.draw(allowButton);
-        window.draw(allowButtonText);
-    }
+    // if (gamePhase == 2) {
+    //     //window.draw(challengeButton);
+    //     //window.draw(challengeButtonText);
+    //     window.draw(blockButton);
+    //     window.draw(blockButtonText);
+    //     window.draw(allowButton);
+    //     window.draw(allowButtonText);
+    // }
     
     window.display();
 }

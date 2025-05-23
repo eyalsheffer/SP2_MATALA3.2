@@ -4,6 +4,7 @@
 #include <SFML/Graphics.hpp>
 #include <vector>
 #include <string>
+#include "../Game.hpp"
 
 enum class GameAction {
     GATHER,
@@ -14,11 +15,11 @@ enum class GameAction {
     COUP,     
 };
 
-struct PlayerInfo {
-    std::string name;
-    int coins;
+struct PlayerGui {
+    //std::string name;
+    //int coins;
     //int influence; // Number of cards remaining
-    bool isActive;
+    //bool isActive;
     sf::Vector2f position;
     sf::RectangleShape playerCard;
     sf::Text nameText;
@@ -34,9 +35,11 @@ private:
     
     // Game state
     int numPlayers;
-    int currentPlayer;
-    int gamePhase; // 0: action selection, 1: target selection, 2: challenge/block
-    std::vector<PlayerInfo> players;
+    //int currentPlayer;
+    //int gamePhase; // 0: action selection, 1: target selection, 2: challenge/block
+    //std::vector<Player*> players;
+    std::vector<PlayerGui> playersGui;
+    Game* game;
     
     // UI Elements
     sf::Text titleText;
