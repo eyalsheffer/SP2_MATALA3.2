@@ -14,8 +14,8 @@ Main: $(OBJ_PLAYERS) Game.o main.o $(OBJ_GUI)
 test: $(OBJ_PLAYERS) Game.o test.o
 	$(CXX) $(CXXFLAGS) -o test $(OBJ_PLAYERS) Game.o test.o $(SFML_LIBS)
 
-valgrind: test
-	valgrind --leak-check=full ./test
+valgrind: Main
+	valgrind --leak-check=full ./Main
 
 Players/Baron.o: Players/Baron.cpp Players/Baron.hpp
 	$(CXX) $(CXXFLAGS) -c Players/Baron.cpp -o Players/Baron.o

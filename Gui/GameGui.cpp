@@ -426,6 +426,11 @@ void GameGui::handleEvents() {
     sf::Event event;
     while (window.pollEvent(event)) {
         if (event.type == sf::Event::Closed) {
+            std::vector<Player*>& players = game->get_players();
+            for(Player* p : players) {
+                delete p;
+            }
+            players.clear();
             window.close();
         }
         else if (event.type == sf::Event::MouseButtonPressed) {

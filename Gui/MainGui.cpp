@@ -197,7 +197,7 @@ int PlayerSelectionGUI::run() {
     return selectedPlayers;
 }
 
-// Standalone function for backward compatibility
+
 int player_selection() {
     PlayerSelectionGUI gui;
     return gui.run();
