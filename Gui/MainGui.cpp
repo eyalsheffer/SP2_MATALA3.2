@@ -8,8 +8,7 @@ PlayerSelectionGUI::PlayerSelectionGUI()
     , fontLoaded(false)
 {
     // Try to load a font (you may need to adjust the path)
-    if (!font.loadFromFile("/System/Library/Fonts/Arial.ttf") && 
-        !font.loadFromFile("C:/Windows/Fonts/arial.ttf") &&
+    if (!font.loadFromFile("/usr/share/fonts/truetype/msttcorefonts/Arial.ttf") &&
         !font.loadFromFile("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf")) {
         std::cout << "Warning: Could not load font. Using default font." << std::endl;
         fontLoaded = false;
