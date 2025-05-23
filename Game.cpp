@@ -24,6 +24,10 @@ int Game::get_turn(){
 // }
 
 void Game::make_action(){
+     if (_players.empty()) {
+        std::cout << "Error: No players in game!" << std::endl;
+        return;
+    }
     _turn++;
     _turn %= _players.size();
 }

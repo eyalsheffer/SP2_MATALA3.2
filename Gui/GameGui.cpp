@@ -8,11 +8,10 @@ GameGui::GameGui(int playerCount)
     , font()
     , fontLoaded(false)
     , numPlayers(playerCount)
-    // , currentPlayer(0)
     , game(&Game::instance())
-    //, gamePhase(0)
-    
 {
+    std::cout << "GameGui constructor started with " << playerCount << " players" << std::endl;
+    
     // Try to load font
     if (!font.loadFromFile("/usr/share/fonts/truetype/msttcorefonts/Arial.ttf") &&
         !font.loadFromFile("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf")) {
@@ -22,10 +21,19 @@ GameGui::GameGui(int playerCount)
         fontLoaded = true;
     }
     
+    std::cout << "About to initialize colors" << std::endl;
     initializeColors();
+    
+    std::cout << "About to initialize players" << std::endl;
     initializePlayers();
+    
+    std::cout << "About to initialize UI" << std::endl;
     initializeUI();
+    
+    std::cout << "About to initialize action buttons" << std::endl;
     initializeActionButtons();
+    
+    std::cout << "Constructor completed successfully" << std::endl;
     updateInfoPanel("Game Started! Player 1's turn.");
 }
 
@@ -40,13 +48,20 @@ void GameGui::initializeColors() {
 }
 
 void GameGui::initializePlayers() {
-    game->get_players().resize(numPlayers);//
-    
+     // Clear existing players first
+    std::vector<Player*>& players = game->get_players();
+    for(Player* p : players) {
+        delete p;
+    }
+    players.clear();
+
+    playersGui.resize(numPlayers);
+    players.reserve(numPlayers);
     for (int i = 0; i < numPlayers; i++) {
-        game->get_players()[i]->set_name("Player " + std::to_string(i + 1));
-        game->get_players()[i]->set_coins(0);  // Starting coins in Coup
-        // players[i].influence = 2;  // Starting influence cards
-        game->get_players()[i]->set_isActive(true);
+        Player* newPlayer = new Player("Player " + std::to_string(i + 1));
+        newPlayer->set_coins(2);  
+        newPlayer->set_isActive(true);
+        players.push_back(newPlayer);
     }
     
     setupPlayerPositions();
@@ -277,6 +292,10 @@ void GameGui::handleMouseMove(sf::Vector2i mousePos) {
 }
 
 void GameGui::executeAction(GameAction action) {
+    if (game->get_players().empty()) {
+        std::cout << "Error: No players in game!" << std::endl;
+        return;
+    }
     std::string actionName;
     game->make_action();
     switch (action) {

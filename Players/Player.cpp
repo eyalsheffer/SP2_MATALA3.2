@@ -100,6 +100,7 @@
     }
     void Player::coup(Player& other){
         if(_coins > 6){
-            other.~Player();//////
+            _coins-=7;
+            other._is_active = false;
         }
     }
