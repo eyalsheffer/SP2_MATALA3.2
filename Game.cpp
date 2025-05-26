@@ -18,6 +18,9 @@ std::vector<Player*>& Game::get_players(){
 int Game::get_turn(){
     return _turn;
 }
+void Game::set_turn(const int turn){
+     _turn  = turn;
+}
 
 // void Game::add_player(Player* p){
 //     _players.push_back(p);

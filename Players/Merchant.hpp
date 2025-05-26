@@ -5,5 +5,9 @@
 #include "Player.hpp"
 
 class Merchant : public Player{
+    private:
+
+    public:
+        Merchant (const std::string& name):Player(name){};
 };
 #endif

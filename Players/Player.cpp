@@ -58,6 +58,9 @@
      void Player::set_isActive(const bool isActive){
         _is_active = isActive;
     }
+     void Player::set_isSanction(const bool isSanction){
+        _is_active = isSanction;
+    }
 
     void Player::gather(){
         if(!_is_sanction){

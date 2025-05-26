@@ -4,6 +4,7 @@
 #include <SFML/Graphics.hpp>
 #include <vector>
 #include <string>
+#include <random>
 #include "../Game.hpp"
 
 enum class GameAction {
@@ -16,15 +17,14 @@ enum class GameAction {
 };
 
 struct PlayerGui {
-    //std::string name;
-    //int coins;
-    //int influence; // Number of cards remaining
-    //bool isActive;
+
     sf::Vector2f position;
     sf::RectangleShape playerCard;
     sf::Text nameText;
     sf::Text coinsText;
-    //sf::Text influenceText;
+    sf::Text roleText;
+    sf::Text statusText;
+
 };
 
 class GameGui {
@@ -32,21 +32,26 @@ private:
     sf::RenderWindow window;
     sf::Font font;
     bool fontLoaded;
-    
-    // Game state
     int numPlayers;
-    //int currentPlayer;
     int gamePhase; // 0: action selection, 1: target selection, 2: block/allow
     std::vector<PlayerGui> playersGui;
     GameAction pendingAction;
     int targetPlayer;
     Game* game;
+    std::mt19937 rng;
+    bool waitingForBlock;
+    int blockingPlayer;
+    GameAction lastAction;
+    int lastActionTarget;
+    std::vector<std::string> roleNames;
     
     // UI Elements
     sf::Text titleText;
     sf::Text currentPlayerText;
     sf::Text phaseText;
     sf::Text instructionText;
+    sf::Text roleText;
+    sf::Text statusText;
     
     // Action buttons
     std::vector<sf::RectangleShape> actionButtons;
@@ -80,6 +85,8 @@ private:
     // Methods
     void initializeColors();
     void initializePlayers();
+    std::string getRoleName(Player* player);
+    std::string getPlayerStatus(Player* player);
     void initializeUI();
     void initializeActionButtons();
     void setupPlayerPositions();
@@ -89,6 +96,7 @@ private:
     void handleMouseClick(sf::Vector2i mousePos);
     void handleMouseMove(sf::Vector2i mousePos);
     void executeTargetedAction(int targetIndex);
+    bool hasGeneralToBlock();
     void handleBlock();
     void handleAllow();
     bool isPointInButton(sf::Vector2i point, const sf::RectangleShape& button);

@@ -27,6 +27,7 @@ class Player{
     void set_name(const std::string& name);
     void set_coins(const int coins);
     void set_isActive(const bool isActive);
+    void set_isSanction(bool sanctioned);
 
     void gather();
     virtual void tax();

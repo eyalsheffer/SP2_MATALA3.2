@@ -8,7 +8,7 @@ class Baron : public Player{
     private:
 
     public:
-
+    Baron (const std::string& name):Player(name){};
     void invest() ;
 
 };

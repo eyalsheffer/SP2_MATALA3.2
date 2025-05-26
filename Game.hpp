@@ -19,6 +19,7 @@ class Game{
 
         std::vector<Player*>& get_players();
         int get_turn();
+        void set_turn(const int turn);
         //void add_player(Player* p);
         void make_action();
 

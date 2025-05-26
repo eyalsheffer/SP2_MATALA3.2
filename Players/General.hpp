@@ -8,7 +8,7 @@ class General : public Player{
     private:
 
     public:
-
+    General (const std::string& name):Player(name){};
     void cancel_coup();
 
 };
