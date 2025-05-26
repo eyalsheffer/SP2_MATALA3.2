@@ -584,7 +584,7 @@ void GameGui::executeAction(GameAction action) {
     }
     Player* currentPlayer = game->get_players()[game->get_turn()];
     std::string actionName;
-    game->make_action();
+    //game->make_action();
 
     switch (action) {
         case GameAction::GATHER:
