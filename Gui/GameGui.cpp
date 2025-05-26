@@ -8,7 +8,10 @@ GameGui::GameGui(int playerCount)
     , font()
     , fontLoaded(false)
     , numPlayers(playerCount)
+    ,gamePhase(0)
+    ,targetPlayer(-1)
     , game(&Game::instance())
+    
 {
     std::cout << "GameGui constructor started with " << playerCount << " players" << std::endl;
     
@@ -252,43 +255,182 @@ bool GameGui::isPointInButton(sf::Vector2i point, const sf::RectangleShape& butt
 }
 
 void GameGui::handleMouseClick(sf::Vector2i mousePos) {
-    //if (gamePhase == 0) { // Action selection phase
+    std::cout << "click \n";
+    if (gamePhase == 0) { // Action selection phase
         for (size_t i = 0; i < actionButtons.size(); i++) {
             if (isPointInButton(mousePos, actionButtons[i])) {
                 executeAction(availableActions[i]);
                 return;
             }
         }
-    //}
-    
-    // Handle block/allow buttons
-    // if (gamePhase == 2) {
-    //     // if (isPointInButton(mousePos, challengeButton)) {
-    //     //     updateInfoPanel("Action challenged! Resolving...");
-    //     //     gamePhase = 0;
-    //     //     nextPlayer();
-    //     //}
-    //     if (isPointInButton(mousePos, blockButton)) {
-    //         updateInfoPanel("Action blocked!");
-    //         gamePhase = 0;
-    //         nextPlayer();
-    //     } else if (isPointInButton(mousePos, allowButton)) {
-    //         updateInfoPanel("Action allowed.");
-    //         gamePhase = 0;
-    //         nextPlayer();
-    //     }
-    // }
+    }
+    else if (gamePhase == 1) { // Target selection phase
+        for (size_t i = 0; i < targetButtons.size(); i++) {
+            if (isPointInButton(mousePos, targetButtons[i])) {
+                executeTargetedAction(i);
+                return;
+            }
+        }
+    }
+    else if (gamePhase == 2) { // Challenge/Block response phase
+        if (isPointInButton(mousePos, blockButton)) {
+            handleBlock();
+        } else if (isPointInButton(mousePos, allowButton)) {
+            handleAllow();
+        }
+    }
 }
 
 void GameGui::handleMouseMove(sf::Vector2i mousePos) {
     // Handle button hover effects
-    for (size_t i = 0; i < actionButtons.size(); i++) {
-        if (isPointInButton(mousePos, actionButtons[i])) {
-            actionButtons[i].setFillColor(buttonHoverColor);
-        } else {
-            actionButtons[i].setFillColor(buttonColor);
+    if (gamePhase == 0) {
+        for (size_t i = 0; i < actionButtons.size(); i++) {
+            if (isPointInButton(mousePos, actionButtons[i])) {
+                actionButtons[i].setFillColor(buttonHoverColor);
+            } else {
+                actionButtons[i].setFillColor(buttonColor);
+            }
         }
     }
+    
+    // Handle target button hover effects (only in target selection phase)
+    if (gamePhase == 1) {
+        for (size_t i = 0; i < targetButtons.size(); i++) {
+            if (isPointInButton(mousePos, targetButtons[i])) {
+                targetButtons[i].setFillColor(buttonHoverColor);
+            } else {
+                targetButtons[i].setFillColor(buttonColor);
+            }
+        }
+    }
+    
+    if (gamePhase == 2) {
+
+        // Block button hover
+        if (isPointInButton(mousePos, blockButton)) {
+            blockButton.setFillColor(sf::Color(255, 165, 0)); // Orange hover
+        } else {
+            blockButton.setFillColor(sf::Color(255, 140, 0)); // Dark orange default
+        }
+        
+        // Allow button hover
+        if (isPointInButton(mousePos, allowButton)) {
+            allowButton.setFillColor(sf::Color(50, 205, 50)); // Lime green hover
+        } else {
+            allowButton.setFillColor(sf::Color(34, 139, 34)); // Forest green default
+        }
+    }
+}
+
+void GameGui::executeTargetedAction(int targetIndex) {
+    std::vector<Player*>& players = game->get_players();
+    Player* currentPlayer = players[game->get_turn()];
+    
+    // Find the actual target player index
+    int actualTargetIndex = -1;
+    int validTargetCount = 0;
+    
+    for (int i = 0; i < numPlayers; i++) {//looks for the actual target
+        if (i != game->get_turn() && players[i]->get_isActive()) {
+            if (validTargetCount == targetIndex) {
+                actualTargetIndex = i;
+                break;
+            }
+            validTargetCount++;
+        }
+    }
+    
+    if (actualTargetIndex == -1) return;
+    
+    Player* target = players[actualTargetIndex];
+    targetPlayer = actualTargetIndex;
+    
+    std::string actionName;
+    
+    switch (pendingAction) {
+        case GameAction::COUP:
+            actionName = "Coup";
+            
+            // currentPlayer->coup(*target);
+            // actionName = "Coup";
+            // updateInfoPanel(currentPlayer->get_name() + " couped " + target->get_name());
+            // gamePhase = 0;
+            // nextPlayer();
+            break;
+            
+        case GameAction::ARREST:
+        case GameAction::SANCTION:
+            // These can be challenged and/or blocked
+            actionName = (pendingAction == GameAction::ARREST) ? "Arrest" : "Sanction";
+            // updateInfoPanel(currentPlayer->get_name() + " wants to " + actionName + " " + target->get_name());
+            // gamePhase = 2; // Challenge/Block phase
+            // phaseText.setString("Phase: Challenge/Block Response");
+            // instructionText.setString("Target can block, others can challenge:");
+            break;
+            
+        default:
+            break;
+        
+    }
+    
+    updateInfoPanel(currentPlayer->get_name() + " wants to " + actionName + " " + target->get_name());
+    gamePhase = 2; // Challenge/Block phase
+    phaseText.setString("Phase: Block Response");
+    instructionText.setString("Waiting for Block/Allow");
+
+    // Clear target buttons
+    targetButtons.clear();
+    targetButtonTexts.clear();
+    updatePlayerDisplay();
+}
+
+void GameGui::handleBlock() {
+    std::vector<Player*>& players = game->get_players();
+    Player* target = players[targetPlayer];
+    
+    updateInfoPanel(target->get_name() + " blocked the action!");
+    gamePhase = 0;
+    nextPlayer();
+}
+
+void GameGui::handleAllow() {
+    std::vector<Player*>& players = game->get_players();
+    Player* currentPlayer = players[game->get_turn()];
+    
+    std::string actionName;
+    
+    switch (pendingAction) {
+        case GameAction::TAX:
+            currentPlayer->tax();
+            actionName = "Tax";
+            break;
+            
+        case GameAction::BRIBE:
+            currentPlayer->bribe();
+            actionName = "Bribe";
+            break;
+            
+        case GameAction::ARREST:
+            if (targetPlayer != -1) {
+                currentPlayer->arrest(*players[targetPlayer]);
+                actionName = "Arrest";
+            }
+            break;
+            
+        case GameAction::COUP:
+            if (targetPlayer != -1) {
+                currentPlayer->coup(*players[targetPlayer]);
+                actionName = "Caoup";
+            }
+            break;
+            
+        default:
+            break;
+    }
+    updateInfoPanel("Action " + actionName + " was allowed and executed.");
+    gamePhase = 0;
+    targetPlayer = -1;
+    nextPlayer();
 }
 
 void GameGui::executeAction(GameAction action) {
@@ -296,62 +438,116 @@ void GameGui::executeAction(GameAction action) {
         std::cout << "Error: No players in game!" << std::endl;
         return;
     }
+    Player* currentPlayer = game->get_players()[game->get_turn()];
     std::string actionName;
     game->make_action();
     switch (action) {
         case GameAction::GATHER:
-            // game->get_players()[game->get_turn()]->gather();
-            // ///players[currentPlayer].coins += 1;
-            // actionName = "Gather";
-            // //gamePhase = 0;
-            // nextPlayer();
+            currentPlayer->gather();
+            actionName = "Gather (+1 coin)";
+            updateInfoPanel(currentPlayer->get_name() + " used " + actionName);
+            gamePhase = 0;
+            nextPlayer();
             break;
     
             
         case GameAction::TAX:
-            // game->get_players()[game->get_turn()]->tax();
-            // //players[currentPlayer].coins += 2;
-            // actionName = "Tax";
-            // gamePhase = 2; // Others can block
-            break;
-            
-        case GameAction::COUP:
-        // game->get_players()[game->get_turn()]->coup();
-        //     //players[currentPlayer].coins -= 7;
-        //     actionName = "Coup";
-        //     gamePhase = 1; // Target selection needed
+            pendingAction = action;
+            actionName = "Tax (+2 coins)";
+            updateInfoPanel(currentPlayer->get_name() + " declared " + actionName);
+            gamePhase = 2; // Block/Allow phase
+            phaseText.setString("Phase: Block Response");
+            instructionText.setString("Other players can Block or allow:");
             break;
             
         case GameAction::BRIBE:
-        // game->get_players()[game->get_turn()]->bribe();
-        //     //players[currentPlayer].coins += 3;
-        //     actionName = "Bribe";
-        //     gamePhase = 2; // Can be challenged
+            if (currentPlayer->get_coins() < 4) {
+                updateInfoPanel("Not enough coins for Bribe! (Need 4 coins)");
+                return;
+            }
+            pendingAction = action;
+            actionName = "Bribe (-4 coins)";
+            updateInfoPanel(currentPlayer->get_name() + " declared " + actionName);
+            gamePhase = 2; // Block/Allow phase
+            phaseText.setString("Phase: Block Response");
+            instructionText.setString("Other players can Block or allow:");
             break;
             
         case GameAction::ARREST:
-        // game->get_players()[game->get_turn()]->arrest();
-        //     //players[currentPlayer].coins -= 3;
-        //     actionName = "Arrest";
-        //     gamePhase = 2; // Can be challenged/blocked     
+            if (currentPlayer->get_coins() < 1) {
+                updateInfoPanel("Not enough coins for Arrest!");
+                return;
+            }
+            pendingAction = action;
+            actionName = "Arrest";
+            updateInfoPanel(currentPlayer->get_name() + " wants to use " + actionName + " - Choose target:");
+            gamePhase = 1; // Target selection phase
+            setupTargetSelection();
             break;
             
         case GameAction::SANCTION:
-            // game->get_players()[game->get_turn()]->sanction();
-            // actionName = "Sanction";
-            // gamePhase = 2; 
+            if (currentPlayer->get_coins() < 3) {
+                    updateInfoPanel("Not enough coins for Sanction! (Need 3 coins)");
+                    return;
+                }
+            pendingAction = action;
+            actionName = "Sanction";
+            updateInfoPanel(currentPlayer->get_name() + " wants to use " + actionName + " - Choose target:");
+            gamePhase = 1; // Target selection phase
+            setupTargetSelection();    
+            break;
+            
+        case GameAction::COUP:
+            if (currentPlayer->get_coins() < 7) {
+                updateInfoPanel("Not enough coins for Coup! (Need 7 coins)");
+                return;
+            }
+            pendingAction = action;
+            actionName = "Coup";
+            updateInfoPanel(currentPlayer->get_name() + " wants to " + actionName + " - Choose target:");
+            gamePhase = 1; // Target selection phase
+            setupTargetSelection();
+            gamePhase = 2; // Block/Allow phase
+            phaseText.setString("Phase: Block Response");
+            instructionText.setString("Other players can Block or allow:");
             break;
             
         
     }
     
-    updateInfoPanel(game->get_players()[game->get_turn()]->get_name() + " chose " + actionName);
+    //updateInfoPanel(game->get_players()[game->get_turn()]->get_name() + " chose " + actionName);
     updatePlayerDisplay();
-////checkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk
-    // if (gamePhase == 2) {
-    //     phaseText.setString("Phase: Block Response");
-    //     instructionText.setString("Other players can challenge or block:");
-    // }
+
+}
+///checkkkkkkkkkkkkkkkkkkkkkk
+void GameGui::setupTargetSelection() {
+    phaseText.setString("Phase: Target Selection");
+    instructionText.setString("Choose target player:");
+    
+    // Create target selection buttons
+    targetButtons.clear();
+    targetButtonTexts.clear();
+    
+    std::vector<Player*>& players = game->get_players();
+    int currentTurn = game->get_turn();
+    
+    for (int i = 0; i < numPlayers; i++) {
+        if (i != currentTurn && players[i]->get_isActive()) {
+            sf::RectangleShape button;
+            button.setSize(sf::Vector2f(120, 30));
+            button.setPosition(400 + (targetButtons.size() * 130), 650);
+            button.setFillColor(buttonColor);
+            targetButtons.push_back(button);
+            
+            sf::Text buttonText;
+            buttonText.setString(players[i]->get_name());
+            if (fontLoaded) buttonText.setFont(font);
+            buttonText.setCharacterSize(12);
+            buttonText.setFillColor(textColor);
+            buttonText.setPosition(410 + (targetButtonTexts.size() * 130), 660);
+            targetButtonTexts.push_back(buttonText);
+        }
+    }
 }
 
 void GameGui::nextPlayer() {
@@ -396,7 +592,7 @@ void GameGui::draw() {
         window.draw(playersGui[i].playerCard);
         window.draw(playersGui[i].nameText);
         window.draw(playersGui[i].coinsText);
-        //window.draw(players[i].influenceText);
+        
     }
     
     // Draw action buttons
@@ -409,15 +605,12 @@ void GameGui::draw() {
     window.draw(infoPanel);
     window.draw(infoPanelText);
     
-    // Draw challenge/block buttons if in appropriate phase
-    // if (gamePhase == 2) {
-    //     //window.draw(challengeButton);
-    //     //window.draw(challengeButtonText);
-    //     window.draw(blockButton);
-    //     window.draw(blockButtonText);
-    //     window.draw(allowButton);
-    //     window.draw(allowButtonText);
-    // }
+    if (gamePhase == 2) {
+        window.draw(blockButton);
+        window.draw(blockButtonText);
+        window.draw(allowButton);
+        window.draw(allowButtonText);
+    }
     
     window.display();
 }

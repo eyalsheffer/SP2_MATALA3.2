@@ -36,9 +36,10 @@ private:
     // Game state
     int numPlayers;
     //int currentPlayer;
-    //int gamePhase; // 0: action selection, 1: target selection, 2: challenge/block
-    //std::vector<Player*> players;
+    int gamePhase; // 0: action selection, 1: target selection, 2: block/allow
     std::vector<PlayerGui> playersGui;
+    GameAction pendingAction;
+    int targetPlayer;
     Game* game;
     
     // UI Elements
@@ -51,10 +52,13 @@ private:
     std::vector<sf::RectangleShape> actionButtons;
     std::vector<sf::Text> actionButtonTexts;
     std::vector<GameAction> availableActions;
+    std::vector<sf::RectangleShape> targetButtons;
+    std::vector<sf::Text> targetButtonTexts;
     
     // Game info panel
     sf::RectangleShape infoPanel;
     sf::Text infoPanelText;
+
     
     // Challenge/Block buttons
     //sf::RectangleShape challengeButton;
@@ -84,8 +88,12 @@ private:
     void updateActionButtons();
     void handleMouseClick(sf::Vector2i mousePos);
     void handleMouseMove(sf::Vector2i mousePos);
+    void executeTargetedAction(int targetIndex);
+    void handleBlock();
+    void handleAllow();
     bool isPointInButton(sf::Vector2i point, const sf::RectangleShape& button);
     void executeAction(GameAction action);
+    void setupTargetSelection();
     void nextPlayer();
     void updateInfoPanel(const std::string& message);
     
