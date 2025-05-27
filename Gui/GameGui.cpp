@@ -273,6 +273,28 @@ void GameGui::initializeUI() {
     resetButtonText.setFillColor(sf::Color::White);
     resetButtonText.setStyle(sf::Text::Bold);
     resetButtonText.setPosition(540, 470);
+
+    // Always-visible reset button
+    alwaysResetButton.setSize(sf::Vector2f(120, 40));
+    alwaysResetButton.setPosition(1060, 680);
+    defaultResetColor = sf::Color(220, 20, 60);  // Crimson
+    hoverResetColor = sf::Color(255, 69, 0);     // Red-orange hover
+    alwaysResetButton.setFillColor(defaultResetColor);
+    alwaysResetButton.setOutlineThickness(2);
+    alwaysResetButton.setOutlineColor(sf::Color::White);
+    
+    alwaysResetText.setString("RESET");
+    if (fontLoaded) alwaysResetText.setFont(font);
+    alwaysResetText.setCharacterSize(14);
+    alwaysResetText.setFillColor(sf::Color::White);
+    alwaysResetText.setStyle(sf::Text::Bold);
+    
+    // Center text in button
+    sf::FloatRect textBounds = alwaysResetText.getLocalBounds();
+    alwaysResetText.setPosition(
+        1060 + 60 - textBounds.width / 2,   // Center horizontally
+        680 + 20 - textBounds.height / 2    // Center vertically
+    );
 }
 
 void GameGui::initializeActionButtons() {
@@ -381,13 +403,12 @@ bool GameGui::isPointInButton(sf::Vector2i point, const sf::RectangleShape& butt
 
 void GameGui::handleMouseClick(sf::Vector2i mousePos) {
     // Check for always-visible reset button
-    sf::FloatRect alwaysResetBounds(1080, 740, 100, 35);
-    if (alwaysResetBounds.contains(static_cast<sf::Vector2f>(mousePos))) {
+    if (isPointInButton(mousePos, alwaysResetButton)) {
         resetGame();
         return;
     }
 
-    if (isPointInResetButton(mousePos)) {
+    if (gameEnded && isPointInResetButton(mousePos)) {
         resetGame();
         return;
     }
@@ -421,21 +442,76 @@ void GameGui::handleMouseClick(sf::Vector2i mousePos) {
 
 void GameGui::handleMouseMove(sf::Vector2i mousePos) {
     // Handle button hover effects
-    if (isPointInResetButton(mousePos)) {
-        resetButton.setFillColor(sf::Color(50, 205, 50)); // Lime green hover
+     if (isPointInButton(mousePos, alwaysResetButton)) {
+        alwaysResetButton.setFillColor(hoverResetColor);
     } else {
-        resetButton.setFillColor(sf::Color(34, 139, 34)); // Forest green default
+        alwaysResetButton.setFillColor(defaultResetColor);
     }
     
+     // Handle victory screen reset button hover
     if (gameEnded) {
-        return;
+        if (isPointInResetButton(mousePos)) {
+            resetButton.setFillColor(sf::Color(50, 205, 50)); // Lime green hover
+        } else {
+            resetButton.setFillColor(sf::Color(34, 139, 34)); // Forest green default
+        }
+        return; // Don't process other hover effects during victory screen
     }
-    if (gamePhase == 0) {
+      if (gamePhase == 0) {
+        Player* currentPlayer = game->get_players()[game->get_turn()];
+        
         for (size_t i = 0; i < actionButtons.size(); i++) {
-            if (isPointInButton(mousePos, actionButtons[i])) {
-                actionButtons[i].setFillColor(buttonHoverColor);
+            // Check if action is available
+            bool isAvailable = true;
+            
+            switch (availableActions[i]) {
+                case GameAction::GATHER:
+                    isAvailable = !currentPlayer->get_isSanction();
+                    break;
+                    
+                case GameAction::TAX:
+                    isAvailable = !currentPlayer->get_isSanction();
+                    break;
+                    
+                case GameAction::BRIBE:
+                    isAvailable = currentPlayer->get_coins() >= 4;
+                    break;
+                    
+                case GameAction::ARREST:
+                    isAvailable = currentPlayer->get_canArrest() && currentPlayer->get_coins() >= 1;
+                    break;
+                    
+                case GameAction::SANCTION:
+                    isAvailable = currentPlayer->get_coins() >= 3;
+                    break;
+                    
+                case GameAction::COUP:
+                    isAvailable = currentPlayer->get_coins() >= 7;
+                    break;
+                    
+                case GameAction::INVEST:
+                    isAvailable = dynamic_cast<Baron*>(currentPlayer) != nullptr;
+                    break;
+                    
+                case GameAction::REVEAL:
+                    isAvailable = dynamic_cast<Spy*>(currentPlayer) != nullptr;
+                    break;
+                    
+                default:
+                    isAvailable = true;
+                    break;
+            }
+            
+            // Apply hover effect only if action is available
+            if (isAvailable) {
+                if (isPointInButton(mousePos, actionButtons[i])) {
+                    actionButtons[i].setFillColor(buttonHoverColor);
+                } else {
+                    actionButtons[i].setFillColor(buttonColor);
+                }
             } else {
-                actionButtons[i].setFillColor(buttonColor);
+                // Keep grayed out appearance for unavailable actions
+                actionButtons[i].setFillColor(sf::Color(50, 50, 50, 100));
             }
         }
     }
@@ -452,7 +528,6 @@ void GameGui::handleMouseMove(sf::Vector2i mousePos) {
     }
     
     if (gamePhase == 2) {
-
         // Block button hover
         if (isPointInButton(mousePos, blockButton)) {
             blockButton.setFillColor(sf::Color(255, 165, 0)); // Orange hover
@@ -1325,20 +1400,9 @@ void GameGui::draw() {
     }
 
     // Always draw reset button 
-    sf::RectangleShape alwaysResetButton;
-    alwaysResetButton.setSize(sf::Vector2f(100, 35));
-    alwaysResetButton.setPosition(1080, 740);
-    alwaysResetButton.setFillColor(sf::Color(139, 69, 19)); // Brown
-    
-    sf::Text alwaysResetText;
-    alwaysResetText.setString("RESET");
-    if (fontLoaded) alwaysResetText.setFont(font);
-    alwaysResetText.setCharacterSize(12);
-    alwaysResetText.setFillColor(textColor);
-    alwaysResetText.setPosition(1110, 750);
-    
     window.draw(alwaysResetButton);
     window.draw(alwaysResetText);
+
     
     // Draw victory screen if game has ended
     if (gameEnded) {
