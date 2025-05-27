@@ -123,6 +123,8 @@ private:
     bool hasGeneralToBlock();
     bool hasGovernorToBlock();
     bool hasJudgeToBlock();
+    bool canPlayerTakeAction();
+    bool isValidArrestTarget(Player* target);
     void startBlockingSequence();
     void handleBlock();
     void handleAllow();

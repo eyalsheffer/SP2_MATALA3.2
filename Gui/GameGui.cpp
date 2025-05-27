@@ -600,8 +600,18 @@ void GameGui::executeTargetedAction(int targetIndex) {
             break;
             
        case GameAction::ARREST:{
-              if (target->get_lastArrested()) {
-                updateInfoPanel("Cannot arrest " + target->get_name() + " - they were arrested last turn!");
+               // Validate arrest target before execution
+            if (!isValidArrestTarget(target)) {
+                std::string reason = "";
+                if (target->get_lastArrested()) {
+                    reason = "they were arrested last turn";
+                } else if (target->get_coins() == 0) {
+                    reason = "they have no coins to lose";
+                } else if (dynamic_cast<Merchant*>(target) && target->get_coins() < 2) {
+                    reason = "they don't have enough coins to pay the merchant penalty";
+                }
+                
+                updateInfoPanel("Cannot arrest " + target->get_name() + " - " + reason + "!");
                 targetButtons.clear();
                 targetButtonTexts.clear();
                 gamePhase = 0;
@@ -619,7 +629,7 @@ void GameGui::executeTargetedAction(int targetIndex) {
 
             target->set_lastArrested(true);
             
-            // Handle role-specific defensive abilities
+            // Handle role-specific arrests
             if (dynamic_cast<General*>(target)) {
                 updateInfoPanel(target->get_name() + " (General) defended against arrest!");
             } else if (dynamic_cast<Merchant*>(target)) {
@@ -722,6 +732,63 @@ bool GameGui::hasJudgeToBlock() {
         }
     }
     return !eligibleBlockers.empty();
+}
+
+bool GameGui::canPlayerTakeAction() {
+    Player* currentPlayer = game->get_players()[game->get_turn()];
+    
+    // If player is sanctioned, they can only gather
+    // if (!currentPlayer->get_isSanction()) {
+    //     return true; // They can always gather (unless we want to add more restrictions)
+    // }
+    
+    // Check if player has any available actions
+    bool hasAvailableAction = false;
+    
+    // Can always gather if not sanctioned
+    if (!currentPlayer->get_isSanction()) {
+        hasAvailableAction = true;
+    }
+    
+    // Check other actions
+    if (currentPlayer->get_coins() >= 3) hasAvailableAction = true; // Sanction
+    if (currentPlayer->get_canArrest()) {
+        // Check if there are valid arrest targets
+        std::vector<Player*>& players = game->get_players();
+        for (int i = 0; i < numPlayers; i++) {
+            if (i != game->get_turn() && players[i]->get_isActive() && !players[i]->get_lastArrested()) {
+                // Check if target can be arrested (has money or is not Merchant with <2 coins)
+                if (players[i]->get_coins() > 0 || 
+                    (dynamic_cast<Merchant*>(players[i]) && players[i]->get_coins() >= 2)) {
+                    hasAvailableAction = true;
+                    break;
+                }
+            }
+        }
+    }
+    if (dynamic_cast<Baron*>(currentPlayer)) hasAvailableAction = true; // Invest
+    
+    
+    return hasAvailableAction;
+}
+
+bool GameGui::isValidArrestTarget(Player* target) {
+    // Cannot arrest if target was arrested last turn
+    if (target->get_lastArrested()) {
+        return false;
+    }
+    
+    // Cannot arrest if target has no money 
+    if (target->get_coins() == 0) {
+        return false; // Regular player with 0 coins can't lose a coin
+    }
+    
+    // Special case: Merchant needs at least 2 coins to pay the penalty instead of losing 1
+    if (dynamic_cast<Merchant*>(target) && target->get_coins() < 2) {
+        return false;
+    }
+    
+    return true;
 }
 
 void GameGui::startBlockingSequence() {
@@ -1050,6 +1117,25 @@ void GameGui::executeAction(GameAction action) {
                 updateInfoPanel("Not enough coins for Arrest!");
                 return;
             }
+
+            {//Check if there are any valid arrest targets
+                std::vector<Player*>& players = game->get_players();
+                bool hasValidTarget = false;
+                
+                for (int i = 0; i < numPlayers; i++) {
+                    if (i != game->get_turn() && players[i]->get_isActive()) {
+                        if (isValidArrestTarget(players[i])) {
+                            hasValidTarget = true;
+                            break;
+                        }
+                    }
+                }
+                
+                if (!hasValidTarget) {
+                    updateInfoPanel("No valid arrest targets available! Choose another action.");
+                    return;
+                }
+            }
             pendingAction = action;
             actionName = "Arrest";
             updateInfoPanel(currentPlayer->get_name() + " wants to use " + actionName + " - Choose target:");
@@ -1137,6 +1223,11 @@ void GameGui::setupTargetSelection() {
     
     for (int i = 0; i < numPlayers; i++) {
         if (i != currentTurn && players[i]->get_isActive()) {
+
+            if (pendingAction == GameAction::ARREST && !isValidArrestTarget(players[i])) {
+                continue;
+            }
+
             sf::RectangleShape button;
             button.setSize(sf::Vector2f(120, 30));
             button.setPosition(400 + (targetButtons.size() * 130), 650);
@@ -1176,13 +1267,19 @@ void GameGui::nextPlayer() {
         game->set_turn((game->get_turn() + 1) % numPlayers);
     } while (!players[game->get_turn()]->get_isActive());
 
-
+    //Extra coin for Merchant
     if(dynamic_cast<Merchant*>(players[game->get_turn()]) && players[game->get_turn()]->get_coins() > 2){
         players[game->get_turn()]->set_coins(players[game->get_turn()]->get_coins() + 1);
     }
 
     if(players[game->get_turn()]->get_coins() > 9){
         executeAction(GameAction::COUP);
+    }
+
+    // Check if the new current player has any available actions
+    if(!canPlayerTakeAction()){
+        updateInfoPanel(currentPlayer->get_name() + " is sanctioned with no options");
+        nextPlayer();
     }
     updateCurrentPlayerDisplay();
     updatePlayerDisplay();
