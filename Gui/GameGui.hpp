@@ -99,6 +99,7 @@ private:
     void executeTargetedAction(int targetIndex);
     bool hasGeneralToBlock();
     bool hasGovernorToBlock();
+    bool hasJudgeToBlock();
     void handleBlock();
     void handleAllow();
     bool isPointInButton(sf::Vector2i point, const sf::RectangleShape& button);

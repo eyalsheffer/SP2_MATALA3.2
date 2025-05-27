@@ -475,6 +475,18 @@ bool GameGui::hasGovernorToBlock() {
     return false;
 }
 
+bool GameGui::hasJudgeToBlock() {
+    std::vector<Player*>& players = game->get_players();
+    for (Player* p : players) {
+        if (p->get_name() != players[game->get_turn()]->get_name() && 
+            dynamic_cast<Judge*>(p) && 
+            p->get_isActive()) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void GameGui::handleBlock() {
     std::vector<Player*>& players = game->get_players();
     Player* currentPlayer = players[game->get_turn()];
@@ -494,8 +506,18 @@ void GameGui::handleBlock() {
             
         case GameAction::BRIBE:
             // Any Judge can block and currentPlayer loses the 4 coins
-            blockMessage = "Bribe blocked by Judge! 4 coins lost!";
-            // Coins already deducted, no need to reverse
+             if (target) {
+                // General pays 5 coins to block
+                for (Player* p : players) {
+                    if (hasJudgeToBlock()) {
+                        blockMessage = p->get_name() + " (Judge) blocked Bribe! 4 coins lost!";
+                        break;
+                    }
+                }
+                // Bribe player still loses their 4 coins
+                currentPlayer -> set_coins(currentPlayer->get_coins() - 4);
+                
+            }
             break;
             
         case GameAction::COUP:
@@ -659,15 +681,30 @@ void GameGui::executeAction(GameAction action) {
                 updateInfoPanel("Not enough coins for Bribe! (Need 4 coins)");
                 return;
             }
+             if (hasJudgeToBlock()) {//////////////////////////////////////
+                waitingForBlock = true;
+                lastAction = action;
+                pendingAction = action;
+                updateInfoPanel(currentPlayer->get_name() + " used " + actionName + " - Judge can block!");
+                gamePhase = 2;
+                phaseText.setString("Phase: Block Response");
+                instructionText.setString("Judge can block this bribe:");
+            } else {
+                // No Judge to block, execute immediately
+                currentPlayer->bribe();
+                updateInfoPanel(currentPlayer->get_name() + " used " + actionName);
+                gamePhase = 0;
+                nextPlayer();
+            }
             // Check if any Judge can block this
-            waitingForBlock = true;
-            lastAction = action;
-            pendingAction = action;
-            actionName = "Bribe (-4 coins, extra turn)";
-            updateInfoPanel(currentPlayer->get_name() + " wants to " + actionName + " - Judges can block!");
-            gamePhase = 2;
-            phaseText.setString("Phase: Block Response");
-            instructionText.setString("Judges can block this bribe:");
+            // waitingForBlock = true;
+            // lastAction = action;
+            // pendingAction = action;
+            // actionName = "Bribe (-4 coins, extra turn)";
+            // updateInfoPanel(currentPlayer->get_name() + " wants to " + actionName + " - Judges can block!");
+            // gamePhase = 2;
+            // phaseText.setString("Phase: Block Response");
+            // instructionText.setString("Judges can block this bribe:");
             break;
             
         case GameAction::ARREST:
@@ -761,7 +798,9 @@ void GameGui::nextPlayer() {
     do {
         game->set_turn((game->get_turn() + 1) % numPlayers);
     } while (!players[game->get_turn()]->get_isActive());
-    
+    if(dynamic_cast<Merchant*>(players[game->get_turn()]) && players[game->get_turn()]->get_coins() > 2){
+        players[game->get_turn()]->set_coins(players[game->get_turn()]->get_coins() + 1);
+    }
     updateCurrentPlayerDisplay();
     updatePlayerDisplay();
     
