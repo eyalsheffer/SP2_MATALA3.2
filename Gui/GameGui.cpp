@@ -218,6 +218,20 @@ void GameGui::initializeUI() {
     infoPanelText.setCharacterSize(12);
     infoPanelText.setFillColor(textColor);
     infoPanelText.setPosition(30, 590);
+
+    // Current blocker highlight (add after existing UI setup)
+    currentBlockerHighlight.setSize(sf::Vector2f(170, 150));
+    currentBlockerHighlight.setFillColor(sf::Color(255, 255, 0, 100)); // Semi-transparent yellow
+    currentBlockerHighlight.setOutlineThickness(3);
+    currentBlockerHighlight.setOutlineColor(sf::Color(255, 215, 0)); // Gold outline
+    
+    // Current blocker prompt
+    currentBlockerPrompt.setString("");
+    if (fontLoaded) currentBlockerPrompt.setFont(font);
+    currentBlockerPrompt.setCharacterSize(18);
+    currentBlockerPrompt.setFillColor(sf::Color(255, 215, 0)); // Gold
+    currentBlockerPrompt.setStyle(sf::Text::Bold);
+    currentBlockerPrompt.setPosition(400, 580);
 }
 
 void GameGui::initializeActionButtons() {
@@ -561,8 +575,15 @@ void GameGui::showCurrentBlockerOption() {
         int blockerPlayerIndex = eligibleBlockers[currentBlockerIndex];
         currentBlockerName = players[blockerPlayerIndex]->get_name();
         
+        // Highlight the current blocker's card
+        currentBlockerHighlight.setPosition(
+            playersGui[blockerPlayerIndex].position.x - 5, 
+            playersGui[blockerPlayerIndex].position.y - 5
+        );
+
         std::string actionName;
         std::string blockerRole;
+        std::string blockCondition = "";
         
         switch (lastAction) {
             case GameAction::TAX:
@@ -592,12 +613,24 @@ void GameGui::showCurrentBlockerOption() {
             case GameAction::REVEAL:
                 break;
         }
+         // Update the prominent blocker prompt
+        std::string promptText = ">>> " + currentBlockerName + " (" + blockerRole + ") <<<\n";
+        promptText += "Can block " + actionName + blockCondition;
+        currentBlockerPrompt.setString(promptText);
+        
+        // Center the prompt text
+        sf::FloatRect textBounds = currentBlockerPrompt.getLocalBounds();
+        currentBlockerPrompt.setPosition(
+            600 - textBounds.width / 2,  // Center horizontally
+            520                          // Fixed vertical position
+        );
         
         updateInfoPanel(currentBlockerName + " (" + blockerRole + ") can block " + actionName + " - Choose:");
         instructionText.setString(currentBlockerName + " can block or allow this action:");
         gamePhase = 2;
     } else {
         // All blockers have decided, execute the action
+        currentBlockerPrompt.setString("");
         executeAllowedAction();
     }
 }
@@ -605,7 +638,6 @@ void GameGui::showCurrentBlockerOption() {
 void GameGui::handleBlock() {
     std::vector<Player*>& players = game->get_players();
     Player* currentPlayer = players[game->get_turn()];
-    //Player* target = players[targetPlayer];
     Player* blocker = players[eligibleBlockers[currentBlockerIndex]];
     bool actionBlocked = true;
 
@@ -647,10 +679,13 @@ void GameGui::handleBlock() {
     updateInfoPanel(blockMessage);
     if (actionBlocked) {
         // Action was blocked, end turn
+        currentBlockerPrompt.setString("");
         gamePhase = 0;
         targetPlayer = -1;
         waitingForBlock = false;
         eligibleBlockers.clear();
+         phaseText.setString("Phase: Action Selection");
+        instructionText.setString("Choose an action:");
         nextPlayer();
         updatePlayerDisplay();
     } else {
@@ -667,81 +702,7 @@ void GameGui::handleAllow() {
     // Move to next blocker
     currentBlockerIndex++;
     showCurrentBlockerOption();
-    // std::vector<Player*>& players = game->get_players();
-    // Player* currentPlayer = players[game->get_turn()];
-    // Player* target = (lastActionTarget != -1) ? players[lastActionTarget] : nullptr;
     
-    // std::string actionName;
-    
-    // switch (lastAction) {
-    //     case GameAction::TAX:
-    //         actionName = "Tax";
-    //         currentPlayer->tax(); 
-    //         updateInfoPanel("Tax executed - " + currentPlayer->get_name() + " gained coins!");
-    //         break;
-
-    //     case GameAction::BRIBE:
-    //         isBribe = true;
-    //         currentPlayer->bribe();
-    //         actionName = "Bribe";
-    //         // Player gets another turn - don't call nextPlayer()
-    //         gamePhase = 0;
-    //         targetPlayer = -1;
-    //         waitingForBlock = false;
-    //         phaseText.setString("Phase: Action Selection");
-    //         instructionText.setString("Choose 2 more actions (Bribe bonus turn):");
-    //         updateInfoPanel("Bribe executed - " + currentPlayer->get_name() + " gets another turn!");
-    //         updatePlayerDisplay();
-    //         return;
-            
-    //     case GameAction::ARREST://////checkkkkkkkkkkkkkkkkkkkk
-    //         if (target) {
-    //             //int oldCoins = target->get_coins();
-    //             currentPlayer->arrest(*target);
-                
-    //             // Handle General defensive ability
-    //             if (dynamic_cast<General*>(target)) {
-    //                 updateInfoPanel(target->get_name() + " (General) defended against arrest!");
-    //             } else if (dynamic_cast<Merchant*>(target)) {
-    //                 updateInfoPanel(target->get_name() + " (Merchant) paid 2 coins to treasury instead!");
-    //             } else {
-    //                 updateInfoPanel("Arrest executed - " + target->get_name() + " lost 1 coin");
-    //             }
-    //             actionName = "Arrest";
-    //         }
-    //         break;
-
-    //      case GameAction::SANCTION:
-    //         if (target) {
-    //             currentPlayer->sanction(*target);
-                
-    //             // Handle Judge defensive ability
-    //             if (dynamic_cast<Judge*>(target)) {
-    //                 updateInfoPanel(target->get_name() + " (Judge) made attacker pay extra coin!");
-    //             } else {
-    //                 updateInfoPanel("Sanction executed - " + target->get_name() + " is sanctioned!");
-    //             }
-    //             actionName = "Sanction";
-    //         }
-    //         break;
-
-    //     case GameAction::COUP:
-    //         if (target) {
-    //             currentPlayer->coup(*target);
-    //             updateInfoPanel("Coup executed - " + target->get_name() + " eliminated!");
-    //             actionName = "Coup";
-    //             //playersGui[lastActionTarget].playerCard.setFillColor(coupedPlayerColor);
-    //         }
-    //         break;
-            
-    //     default:
-    //         break;
-    // }
-    // gamePhase = 0;
-    // targetPlayer = -1;
-    // waitingForBlock = false;
-    // nextPlayer();
-    // updatePlayerDisplay();
 }
 void GameGui::executeAllowedAction() {
     std::vector<Player*>& players = game->get_players();
@@ -1076,6 +1037,12 @@ void GameGui::draw() {
         window.draw(playersGui[i].statusText);
         
     }
+
+     // Draw current blocker highlight (only during blocking phase)
+    if (gamePhase == 2 && !eligibleBlockers.empty() && 
+        currentBlockerIndex < static_cast<int>(eligibleBlockers.size())) {
+        window.draw(currentBlockerHighlight);
+    }
     
     // Draw action buttons
     if (gamePhase == 0) {
@@ -1093,6 +1060,11 @@ void GameGui::draw() {
         }
     }
 
+      // Draw current blocker prompt (only during blocking phase)
+    if (gamePhase == 2 && !currentBlockerPrompt.getString().isEmpty()) {
+        window.draw(currentBlockerPrompt);
+    }
+    
     // Draw info panel
     window.draw(infoPanel);
     window.draw(infoPanelText);

@@ -78,6 +78,8 @@ private:
     //sf::Text challengeButtonText;
     sf::Text blockButtonText;
     sf::Text allowButtonText;
+    sf::RectangleShape currentBlockerHighlight;
+    sf::Text currentBlockerPrompt;
     
     // Colors
     sf::Color backgroundColor;
