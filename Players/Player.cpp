@@ -2,6 +2,7 @@
 #include "General.hpp"
 #include "Judge.hpp"
 #include "Merchant.hpp"
+#include "Baron.hpp"
 #include <iostream>
     Player::Player(std::string name){
         _coins = 0;
@@ -98,9 +99,11 @@
             if(dynamic_cast<Judge*>(&other)){
                 _coins--;
             }
-            else{
-                other._is_sanction = true;
+            else if(dynamic_cast<Baron*>(&other)){
+                other._coins++;
             }
+            other._is_sanction = true;
+            
         }
     }
     void Player::coup(Player& other){
