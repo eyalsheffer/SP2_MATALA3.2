@@ -477,7 +477,7 @@ bool GameGui::hasGovernorToBlock() {
 
 void GameGui::handleBlock() {
     std::vector<Player*>& players = game->get_players();
-    //Player* currentPlayer = players[game->get_turn()];
+    Player* currentPlayer = players[game->get_turn()];
     Player* target = players[targetPlayer];
     std::string blockMessage;
     switch (lastAction) {
@@ -505,10 +505,12 @@ void GameGui::handleBlock() {
                     if (dynamic_cast<General*>(p) && p->get_isActive() && p->get_coins() >= 5) {
                         p->set_coins(p->get_coins() - 5);
                         blockMessage = p->get_name() + " (General) blocked coup for 5 coins!";
-            break;
-    }
+                        break;
+                    }
                 }
                 // Coup player still loses their 7 coins
+                currentPlayer -> set_coins(currentPlayer->get_coins() - 7);
+                
             }
             break;
             
