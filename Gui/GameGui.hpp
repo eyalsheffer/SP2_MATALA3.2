@@ -50,6 +50,7 @@ private:
     std::vector<int> eligibleBlockers;      // Indices of players who can block
     int currentBlockerIndex;                // Current blocker being asked
     std::string currentBlockerName;         // Name of current blocker for display
+    std::vector<int> revealedPlayers;       // Track which players' coins are visible
     
     // UI Elements
     sf::Text titleText;
@@ -119,6 +120,8 @@ private:
   
     void showCurrentBlockerOption();
     void executeAllowedAction();
+
+    void updateActionButtonVisibility();
     
 public:
     GameGui(int playerCount);

@@ -138,7 +138,13 @@ void GameGui::setupPlayerPositions() {
         playersGui[i].roleText = roleDisplay;
 
         // Coins display
-        playersGui[i].coinsText.setString("Coins: " + std::to_string(game->get_players()[i]->get_coins()));
+        //playersGui[i].coinsText.setString("Coins: " + std::to_string(game->get_players()[i]->get_coins()));
+        // Coins display - only show for current player initially
+        if (i == game->get_turn()) {
+            playersGui[i].coinsText.setString("Coins: " + std::to_string(game->get_players()[i]->get_coins()));
+        } else {
+            playersGui[i].coinsText.setString("Coins: ???");
+        }
         if (fontLoaded) playersGui[i].coinsText.setFont(font);
         playersGui[i].coinsText.setCharacterSize(14);
         playersGui[i].coinsText.setFillColor(sf::Color(255, 215, 0)); // Gold
@@ -302,6 +308,8 @@ void GameGui::initializeActionButtons() {
     allowButtonText.setCharacterSize(12);
     allowButtonText.setFillColor(textColor);
     allowButtonText.setPosition(670, 660);
+
+    updateActionButtonVisibility();
 }
 
 void GameGui::updatePlayerDisplay() {
@@ -315,8 +323,14 @@ void GameGui::updatePlayerDisplay() {
             playersGui[i].playerCard.setFillColor(inactivePlayerColor);
         }
         
-        // Update coin and influence counts
-        playersGui[i].coinsText.setString("Coins: " + std::to_string(game->get_players()[i]->get_coins()));
+        // Update coin display based on visibility rules
+        if (i == game->get_turn() || 
+            std::find(revealedPlayers.begin(), revealedPlayers.end(), i) != revealedPlayers.end()) {
+            playersGui[i].coinsText.setString("Coins: " + std::to_string(game->get_players()[i]->get_coins()));
+        } else {
+            playersGui[i].coinsText.setString("Coins: ???");
+        }
+        //playersGui[i].coinsText.setString("Coins: " + std::to_string(game->get_players()[i]->get_coins()));
         //players[i].influenceText.setString("Cards: " + std::to_string(players[i].influence));
     }
 }
@@ -500,6 +514,7 @@ void GameGui::executeTargetedAction(int targetIndex) {
             }
             Spy* spy = dynamic_cast<Spy*>(currentPlayer);
             spy->reveal(*target);
+            revealedPlayers.push_back(actualTargetIndex);
             actionName = "reveal";
             updateInfoPanel(currentPlayer->get_name() + " revealed " + target->get_name());
             targetButtons.clear();
@@ -996,6 +1011,9 @@ void GameGui::nextPlayer() {
     updateCurrentPlayerDisplay();
     updatePlayerDisplay();
     
+    revealedPlayers.clear();
+    updateActionButtonVisibility();
+
     phaseText.setString("Phase: Action Selection");
     instructionText.setString("Choose an action:");
 }
@@ -1017,6 +1035,34 @@ void GameGui::updateInfoPanel(const std::string& message) {
     }
     
     infoPanelText.setString(currentText + "\n" + message);
+}
+
+void GameGui::updateActionButtonVisibility() {
+    Player* currentPlayer = game->get_players()[game->get_turn()];
+    
+    for (size_t i = 0; i < availableActions.size(); i++) {
+        bool shouldShow = true;
+        
+        switch (availableActions[i]) {
+            case GameAction::INVEST:
+                shouldShow = dynamic_cast<Baron*>(currentPlayer) != nullptr;
+                break;
+            case GameAction::REVEAL:
+                shouldShow = dynamic_cast<Spy*>(currentPlayer) != nullptr;
+                break;
+            default:
+                shouldShow = true;
+                break;
+        }
+        
+        if (shouldShow) {
+            actionButtons[i].setFillColor(buttonColor);
+            actionButtonTexts[i].setFillColor(textColor);
+        } else {
+            actionButtons[i].setFillColor(sf::Color(50, 50, 50, 100)); // Grayed out
+            actionButtonTexts[i].setFillColor(sf::Color(100, 100, 100)); // Gray text
+        }
+    }
 }
 
 void GameGui::draw() {
@@ -1064,7 +1110,7 @@ void GameGui::draw() {
     if (gamePhase == 2 && !currentBlockerPrompt.getString().isEmpty()) {
         window.draw(currentBlockerPrompt);
     }
-    
+
     // Draw info panel
     window.draw(infoPanel);
     window.draw(infoPanelText);
