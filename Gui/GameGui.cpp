@@ -61,6 +61,7 @@ void GameGui::initializeColors() {
     panelColor = sf::Color(45, 55, 65);             // Lighter blue-gray
     activePlayerColor = sf::Color(100, 149, 237);   // Cornflower blue
     inactivePlayerColor = sf::Color(70, 80, 90);    // Gray
+    coupedPlayerColor = sf::Color(255,0,0);         // Red
     buttonColor = sf::Color(80, 100, 120);          // Blue-gray
     buttonHoverColor = sf::Color(135, 206, 235);    // Sky blue
     textColor = sf::Color::White;
@@ -289,7 +290,9 @@ void GameGui::updatePlayerDisplay() {
         // Update colors based on current player
         if (i == game->get_turn()) {
             playersGui[i].playerCard.setFillColor(activePlayerColor);
-        } else {
+        } else if(!game->get_players()[i]->get_isActive()) {
+            playersGui[i].playerCard.setFillColor(coupedPlayerColor);
+        } else{
             playersGui[i].playerCard.setFillColor(inactivePlayerColor);
         }
         
@@ -325,7 +328,7 @@ void GameGui::handleMouseClick(sf::Vector2i mousePos) {
             }
         }
     }
-    else if (gamePhase == 2) { // Challenge/Block response phase
+    else if (gamePhase == 2) { // Block response phase
         if (isPointInButton(mousePos, blockButton)) {
             handleBlock();
         } else if (isPointInButton(mousePos, allowButton)) {
@@ -446,7 +449,7 @@ void GameGui::executeTargetedAction(int targetIndex) {
 bool GameGui::hasGeneralToBlock() {
     std::vector<Player*>& players = game->get_players();
     for (Player* p : players) {
-        if (dynamic_cast<General*>(p) && p->get_isActive() && p->get_coins() >= 5) {
+        if (p->get_name() != players[game->get_turn()]->get_name() && dynamic_cast<General*>(p) && p->get_isActive() && p->get_coins() >= 5) {
             return true;
         }
     }
@@ -566,6 +569,7 @@ void GameGui::handleAllow() {
                 currentPlayer->coup(*target);
                 updateInfoPanel("Coup executed - " + target->get_name() + " eliminated!");
                 actionName = "Coup";
+                //playersGui[lastActionTarget].playerCard.setFillColor(coupedPlayerColor);
             }
             break;
             

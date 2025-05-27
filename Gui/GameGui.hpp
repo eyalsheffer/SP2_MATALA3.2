@@ -78,6 +78,7 @@ private:
     sf::Color panelColor;
     sf::Color activePlayerColor;
     sf::Color inactivePlayerColor;
+    sf::Color coupedPlayerColor;
     sf::Color buttonColor;
     sf::Color buttonHoverColor;
     sf::Color textColor;
