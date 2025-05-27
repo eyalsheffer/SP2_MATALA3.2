@@ -22,6 +22,8 @@ GameGui::GameGui(int playerCount)
     , waitingForBlock(false)
     , blockingPlayer(-1)
     , lastActionTarget(-1)
+    , gameEnded(false)  
+    , winnerName("")
     
 {
     std::cout << "GameGui constructor started with " << playerCount << " players" << std::endl;
@@ -137,8 +139,7 @@ void GameGui::setupPlayerPositions() {
         roleDisplay.setPosition(playersGui[i].position.x + 5, playersGui[i].position.y + 25);
         playersGui[i].roleText = roleDisplay;
 
-        // Coins display
-        //playersGui[i].coinsText.setString("Coins: " + std::to_string(game->get_players()[i]->get_coins()));
+       
         // Coins display - only show for current player initially
         if (i == game->get_turn()) {
             playersGui[i].coinsText.setString("Coins: " + std::to_string(game->get_players()[i]->get_coins()));
@@ -238,6 +239,40 @@ void GameGui::initializeUI() {
     currentBlockerPrompt.setFillColor(sf::Color(255, 215, 0)); // Gold
     currentBlockerPrompt.setStyle(sf::Text::Bold);
     currentBlockerPrompt.setPosition(400, 580);
+
+      // Victory screen elements
+    victoryOverlay.setSize(sf::Vector2f(600, 400));
+    victoryOverlay.setPosition(300, 200);
+    victoryOverlay.setFillColor(sf::Color(0, 0, 0, 200)); // Semi-transparent black
+    victoryOverlay.setOutlineThickness(5);
+    victoryOverlay.setOutlineColor(sf::Color(255, 215, 0)); // Gold border
+    
+    victoryTitleText.setString("GAME OVER!");
+    if (fontLoaded) victoryTitleText.setFont(font);
+    victoryTitleText.setCharacterSize(48);
+    victoryTitleText.setFillColor(sf::Color(255, 215, 0)); // Gold
+    victoryTitleText.setStyle(sf::Text::Bold);
+    victoryTitleText.setPosition(450, 250);
+    
+    winnerText.setString("");
+    if (fontLoaded) winnerText.setFont(font);
+    winnerText.setCharacterSize(32);
+    winnerText.setFillColor(sf::Color::White);
+    winnerText.setStyle(sf::Text::Bold);
+    winnerText.setPosition(450, 320);
+    
+    resetButton.setSize(sf::Vector2f(200, 60));
+    resetButton.setPosition(500, 450);
+    resetButton.setFillColor(sf::Color(34, 139, 34)); // Forest green
+    resetButton.setOutlineThickness(2);
+    resetButton.setOutlineColor(sf::Color::White);
+    
+    resetButtonText.setString("PLAY AGAIN");
+    if (fontLoaded) resetButtonText.setFont(font);
+    resetButtonText.setCharacterSize(20);
+    resetButtonText.setFillColor(sf::Color::White);
+    resetButtonText.setStyle(sf::Text::Bold);
+    resetButtonText.setPosition(540, 470);
 }
 
 void GameGui::initializeActionButtons() {
@@ -345,6 +380,20 @@ bool GameGui::isPointInButton(sf::Vector2i point, const sf::RectangleShape& butt
 }
 
 void GameGui::handleMouseClick(sf::Vector2i mousePos) {
+    // Check for always-visible reset button
+    sf::FloatRect alwaysResetBounds(1080, 740, 100, 35);
+    if (alwaysResetBounds.contains(static_cast<sf::Vector2f>(mousePos))) {
+        resetGame();
+        return;
+    }
+
+    if (isPointInResetButton(mousePos)) {
+        resetGame();
+        return;
+    }
+    if (gameEnded) {
+        return;
+    }
     if (gamePhase == 0) { // Action selection phase
         for (size_t i = 0; i < actionButtons.size(); i++) {
             if (isPointInButton(mousePos, actionButtons[i])) {
@@ -372,6 +421,15 @@ void GameGui::handleMouseClick(sf::Vector2i mousePos) {
 
 void GameGui::handleMouseMove(sf::Vector2i mousePos) {
     // Handle button hover effects
+    if (isPointInResetButton(mousePos)) {
+        resetButton.setFillColor(sf::Color(50, 205, 50)); // Lime green hover
+    } else {
+        resetButton.setFillColor(sf::Color(34, 139, 34)); // Forest green default
+    }
+    
+    if (gameEnded) {
+        return;
+    }
     if (gamePhase == 0) {
         for (size_t i = 0; i < actionButtons.size(); i++) {
             if (isPointInButton(mousePos, actionButtons[i])) {
@@ -456,6 +514,9 @@ void GameGui::executeTargetedAction(int targetIndex) {
                 currentPlayer->coup(*target);
                 actionName = "Coup";
                 updateInfoPanel(currentPlayer->get_name() + " couped " + target->get_name());
+                // Check for winner after coup
+                checkForWinner();
+                if (gameEnded) return; // Don't continue if game ended
                 targetButtons.clear();
                 targetButtonTexts.clear();
                 gamePhase = 0;
@@ -813,6 +874,10 @@ void GameGui::executeAllowedAction() {
                 currentPlayer->coup(*target);
                 updateInfoPanel("Coup executed - " + target->get_name() + " eliminated!");
                 actionName = "Coup";
+
+                // Check for winner after coup
+                checkForWinner();
+                if (gameEnded) return; // Don't continue if game ended
             }
             break;
             
@@ -1135,6 +1200,73 @@ void GameGui::updateActionButtonVisibility() {
     }
 }
 
+void GameGui::checkForWinner() {
+    try {
+        std::string winner = game->winner();
+        showVictoryScreen(winner);
+    } catch (const std::runtime_error& e) {
+        // No winner yet or multiple players active - continue game
+    }
+}
+
+void GameGui::showVictoryScreen(const std::string& winner) {
+    gameEnded = true;
+    winnerName = winner;
+    
+    // Center the winner text
+    winnerText.setString(winner + " WINS!");
+    sf::FloatRect textBounds = winnerText.getLocalBounds();
+    winnerText.setPosition(600 - textBounds.width / 2, 320);
+    
+    // Center the title text
+    sf::FloatRect titleBounds = victoryTitleText.getLocalBounds();
+    victoryTitleText.setPosition(600 - titleBounds.width / 2, 250);
+    
+    updateInfoPanel("GAME OVER! " + winner + " is the winner!");
+}
+
+void GameGui::resetGame() {
+    gameEnded = false;
+    winnerName = "";
+    gamePhase = 0;
+    targetPlayer = -1;
+    isBribe = false;
+    waitingForBlock = false;
+    blockingPlayer = -1;
+    lastActionTarget = -1;
+    eligibleBlockers.clear();
+    revealedPlayers.clear();
+    
+    // Clear existing buttons
+    targetButtons.clear();
+    targetButtonTexts.clear();
+    
+    // Reset game state
+    game->set_turn(0);
+    
+    // Reinitialize players
+    initializePlayers();
+    updatePlayerDisplay();
+    updateCurrentPlayerDisplay();
+    updateActionButtonVisibility();
+    
+    phaseText.setString("Phase: Action Selection");
+    instructionText.setString("Choose an action:");
+    updateInfoPanel("New Game Started! Player 1's turn.");
+}
+
+bool GameGui::isPointInResetButton(sf::Vector2i point) {
+    sf::FloatRect bounds = resetButton.getGlobalBounds();
+    return bounds.contains(static_cast<sf::Vector2f>(point));
+}
+void GameGui::drawVictoryScreen() {
+    window.draw(victoryOverlay);
+    window.draw(victoryTitleText);
+    window.draw(winnerText);
+    window.draw(resetButton);
+    window.draw(resetButtonText);
+}
+
 void GameGui::draw() {
     window.clear(backgroundColor);
     
@@ -1161,7 +1293,7 @@ void GameGui::draw() {
     }
     
     // Draw action buttons
-    if (gamePhase == 0) {
+    if (gamePhase == 0 && !gameEnded) {
         for (size_t i = 0; i < actionButtons.size(); i++) {
             window.draw(actionButtons[i]);
             window.draw(actionButtonTexts[i]);
@@ -1169,15 +1301,15 @@ void GameGui::draw() {
     }
 
     // Draw target selection buttons
-    if (gamePhase == 1) {
+    if (gamePhase == 1 && !gameEnded) {
         for (size_t i = 0; i < targetButtons.size(); i++) {
             window.draw(targetButtons[i]);
             window.draw(targetButtonTexts[i]);
         }
     }
 
-      // Draw current blocker prompt (only during blocking phase)
-    if (gamePhase == 2 && !currentBlockerPrompt.getString().isEmpty()) {
+    // Draw current blocker prompt (only during blocking phase)
+    if (gamePhase == 2 && !currentBlockerPrompt.getString().isEmpty() && !gameEnded) {
         window.draw(currentBlockerPrompt);
     }
 
@@ -1185,12 +1317,34 @@ void GameGui::draw() {
     window.draw(infoPanel);
     window.draw(infoPanelText);
     
-    if (gamePhase == 2) {
+   if (gamePhase == 2 && !gameEnded) {
         window.draw(blockButton);
         window.draw(blockButtonText);
         window.draw(allowButton);
         window.draw(allowButtonText);
     }
+
+    // Always draw reset button 
+    sf::RectangleShape alwaysResetButton;
+    alwaysResetButton.setSize(sf::Vector2f(100, 35));
+    alwaysResetButton.setPosition(1080, 740);
+    alwaysResetButton.setFillColor(sf::Color(139, 69, 19)); // Brown
+    
+    sf::Text alwaysResetText;
+    alwaysResetText.setString("RESET");
+    if (fontLoaded) alwaysResetText.setFont(font);
+    alwaysResetText.setCharacterSize(12);
+    alwaysResetText.setFillColor(textColor);
+    alwaysResetText.setPosition(1110, 750);
+    
+    window.draw(alwaysResetButton);
+    window.draw(alwaysResetText);
+    
+    // Draw victory screen if game has ended
+    if (gameEnded) {
+        drawVictoryScreen();
+    }
+
     
     window.display();
 }

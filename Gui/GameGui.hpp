@@ -73,15 +73,22 @@ private:
     sf::Text infoPanelText;
 
     
-    // Challenge/Block buttons
-    //sf::RectangleShape challengeButton;
+    // Block buttons
     sf::RectangleShape blockButton;
     sf::RectangleShape allowButton;
-    //sf::Text challengeButtonText;
     sf::Text blockButtonText;
     sf::Text allowButtonText;
     sf::RectangleShape currentBlockerHighlight;
     sf::Text currentBlockerPrompt;
+
+    // Victory screen elements
+    bool gameEnded;
+    std::string winnerName;
+    sf::RectangleShape victoryOverlay;
+    sf::Text victoryTitleText;
+    sf::Text winnerText;
+    sf::RectangleShape resetButton;
+    sf::Text resetButtonText;
     
     // Colors
     sf::Color backgroundColor;
@@ -123,6 +130,12 @@ private:
     void executeAllowedAction();
 
     void updateActionButtonVisibility();
+
+    void checkForWinner();
+    void showVictoryScreen(const std::string& winner);
+    void resetGame();
+    void drawVictoryScreen();
+    bool isPointInResetButton(sf::Vector2i point);
     
 public:
     GameGui(int playerCount);

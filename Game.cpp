@@ -22,15 +22,30 @@ void Game::set_turn(const int turn){
      _turn  = turn;
 }
 
+std::string Game::winner(){
+    std::string won;
+    int count  = 0;
+    for(Player* p : _players){
+        if(p->get_isActive()){
+            count++;
+            won = p->get_name();
+        }
+    }
+    if(count == 1){
+        return won;
+    }
+    throw std::runtime_error("No winner yet or multiple players still active");
+}
+
 // void Game::add_player(Player* p){
 //     _players.push_back(p);
 // }
 
-void Game::make_action(){
-     if (_players.empty()) {
-        std::cout << "Error: No players in game!" << std::endl;
-        return;
-    }
-    _turn++;
-    _turn %= _players.size();
-}
+// void Game::make_action(){
+//      if (_players.empty()) {
+//         std::cout << "Error: No players in game!" << std::endl;
+//         return;
+//     }
+//     _turn++;
+//     _turn %= _players.size();
+// }
