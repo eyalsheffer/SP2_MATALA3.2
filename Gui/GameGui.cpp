@@ -455,7 +455,7 @@ bool GameGui::hasGeneralToBlock() {
 
 void GameGui::handleBlock() {
     std::vector<Player*>& players = game->get_players();
-    Player* currentPlayer = players[game->get_turn()];
+    //Player* currentPlayer = players[game->get_turn()];
     Player* target = players[targetPlayer];
     std::string blockMessage;
     switch (lastAction) {
@@ -463,11 +463,11 @@ void GameGui::handleBlock() {
             // Any Governor can block
             blockMessage = "Tax blocked by Governor!";
             // Reverse the tax effect
-            if (dynamic_cast<Governor*>(currentPlayer)) {
-                currentPlayer->set_coins(currentPlayer->get_coins() - 3);
-            } else {
-                currentPlayer->set_coins(currentPlayer->get_coins() - 2);
-            }
+            // if (dynamic_cast<Governor*>(currentPlayer)) {
+            //     currentPlayer->set_coins(currentPlayer->get_coins() - 3);
+            // } else {
+            //     currentPlayer->set_coins(currentPlayer->get_coins() - 2);
+            // }
             break;
             
         case GameAction::BRIBE:
@@ -513,8 +513,10 @@ void GameGui::handleAllow() {
     switch (lastAction) {
         case GameAction::TAX:
             actionName = "Tax";
+            currentPlayer->tax(); 
+            updateInfoPanel("Tax executed - " + currentPlayer->get_name() + " gained coins!");
             break;
-            
+
         case GameAction::BRIBE:
              currentPlayer->bribe();
             actionName = "Bribe";
@@ -584,7 +586,6 @@ void GameGui::executeAction(GameAction action) {
     }
     Player* currentPlayer = game->get_players()[game->get_turn()];
     std::string actionName;
-    //game->make_action();
 
     switch (action) {
         case GameAction::GATHER:
@@ -671,7 +672,7 @@ void GameGui::executeAction(GameAction action) {
             updateInfoPanel(currentPlayer->get_name() + " wants to " + actionName + " - Choose target:");
             gamePhase = 1; // Target selection phase
             setupTargetSelection();
-            gamePhase = 2; // Block/Allow phase
+            //gamePhase = 2; // Block/Allow phase
             phaseText.setString("Phase: Block Response");
             instructionText.setString("Other players can Block or allow:");
             break;
@@ -716,12 +717,12 @@ void GameGui::setupTargetSelection() {
 
 void GameGui::nextPlayer() {
     std::vector<Player*>& players = game->get_players();
+    Player* currentPlayer = players[game->get_turn()];
     
     // Clear sanctions from previous turn
-    for (Player* p : players) {
-        if (p->get_isSanction()) {
-            p->set_isSanction(false); // You'll need to add this setter
-        }
+     if (currentPlayer->get_isSanction()) {
+        currentPlayer->set_isSanction(false);
+        updateInfoPanel(currentPlayer->get_name() + "'s sanction has been lifted!");
     }
     
     // Move to next active player
