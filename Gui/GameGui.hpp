@@ -47,6 +47,7 @@ private:
     int lastActionTarget;
     std::vector<std::string> roleNames;
     bool isBribe;
+    
     std::vector<int> eligibleBlockers;      // Indices of players who can block
     int currentBlockerIndex;                // Current blocker being asked
     std::string currentBlockerName;         // Name of current blocker for display

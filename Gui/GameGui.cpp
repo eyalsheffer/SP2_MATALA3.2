@@ -438,8 +438,8 @@ void GameGui::executeTargetedAction(int targetIndex) {
     std::string actionName;
     
     switch (pendingAction) {
-         case GameAction::GATHER:
-        break;
+        case GameAction::GATHER:
+            break;
         case GameAction::TAX:
             break;
         case GameAction::BRIBE:
@@ -463,50 +463,58 @@ void GameGui::executeTargetedAction(int targetIndex) {
             }
             break;
             
-       case GameAction::ARREST:
-            waitingForBlock = true;
-            lastAction = pendingAction;
+       case GameAction::ARREST:{
+              if (target->get_lastArrested()) {
+                updateInfoPanel("Cannot arrest " + target->get_name() + " - they were arrested last turn!");
+                targetButtons.clear();
+                targetButtonTexts.clear();
+                gamePhase = 0;
+                return;
+            }
+            currentPlayer->arrest(*target);
             actionName = "Arrest";
-            // For arrest, anyone can block (you might want to modify this logic)
-            eligibleBlockers.clear();
-            for (int i = 0; i < numPlayers; i++) {
-                if (i != game->get_turn() && players[i]->get_isActive()) {
-                    eligibleBlockers.push_back(i);
+
+            std::vector<Player*>& allPlayers = game->get_players();
+            for (Player* p : allPlayers) {
+                if (p != target) {
+                    p->set_lastArrested(false);
                 }
             }
-            updateInfoPanel(currentPlayer->get_name() + " wants to " + actionName + " " + target->get_name() + " - Can be blocked!");
-            startBlockingSequence();
-            break;
-            // waitingForBlock = true;
-            // lastAction = pendingAction;
-            // actionName = "Arrest";
-            // updateInfoPanel(currentPlayer->get_name() + " wants to " + actionName + " " + target->get_name() + " - Can be blocked!");
-            // gamePhase = 2;
-            // phaseText.setString("Phase: Block Response");
-            // instructionText.setString("Target or others can block:");
-            // break;
+
+            target->set_lastArrested(true);
             
-        case GameAction::SANCTION:
-            waitingForBlock = true;
-            lastAction = pendingAction;
-            actionName = "Sanction";
-            // For sanction, anyone can block (you might want to modify this logic)
-            eligibleBlockers.clear();
-            for (int i = 0; i < numPlayers; i++) {
-                if (i != game->get_turn() && players[i]->get_isActive()) {
-                    eligibleBlockers.push_back(i);
-                }
+            // Handle role-specific defensive abilities
+            if (dynamic_cast<General*>(target)) {
+                updateInfoPanel(target->get_name() + " (General) defended against arrest!");
+            } else if (dynamic_cast<Merchant*>(target)) {
+                updateInfoPanel(target->get_name() + " (Merchant) paid 2 coins to treasury instead!");
+            } else {
+                updateInfoPanel("Arrest executed - " + target->get_name() + " lost 1 coin");
             }
-            updateInfoPanel(currentPlayer->get_name() + " wants to " + actionName + " " + target->get_name() + " - Can be blocked!");
-            startBlockingSequence();
-            // waitingForBlock = true;
-            // lastAction = pendingAction;
-            // actionName = "Sanction";
-            // updateInfoPanel(currentPlayer->get_name() + " wants to " + actionName + " " + target->get_name() + " - Can be blocked!");
-            // gamePhase = 2;
-            // phaseText.setString("Phase: Block Response");
-            // instructionText.setString("Target or others can block:");
+            
+            targetButtons.clear();
+            targetButtonTexts.clear();
+            gamePhase = 0;
+            nextPlayer();
             break;
+       }  
+        case GameAction::SANCTION:
+             currentPlayer->sanction(*target);
+            actionName = "Sanction";
+            
+            // Handle role-specific defensive abilities
+            if (dynamic_cast<Judge*>(target)) {
+                updateInfoPanel(target->get_name() + " (Judge) made attacker pay extra coin!");
+            } else {
+                updateInfoPanel("Sanction executed - " + target->get_name() + " is sanctioned!");
+            }
+            
+            targetButtons.clear();
+            targetButtonTexts.clear();
+            gamePhase = 0;
+            nextPlayer();
+            break;
+        
         case GameAction::REVEAL:{
             if(!dynamic_cast<Spy*>(currentPlayer)){
                 updateInfoPanel("Only Spy can reveal!");
@@ -520,6 +528,9 @@ void GameGui::executeTargetedAction(int targetIndex) {
             targetButtons.clear();
             targetButtonTexts.clear();
             gamePhase = 0;
+            break;
+        }
+        case GameAction::INVEST: {
             break;
         }
         default:
@@ -703,6 +714,7 @@ void GameGui::handleBlock() {
         instructionText.setString("Choose an action:");
         nextPlayer();
         updatePlayerDisplay();
+        updateActionButtonVisibility();
     } else {
         // Block failed, continue to next blocker or execute action
         currentBlockerIndex++;
@@ -750,7 +762,25 @@ void GameGui::executeAllowedAction() {
             
         case GameAction::ARREST:
             if (target) {
+                 if (target->get_lastArrested()) {
+                    updateInfoPanel("Cannot arrest " + target->get_name() + " - they were arrested last turn!");
+                    gamePhase = 0;
+                    targetPlayer = -1;
+                    waitingForBlock = false;
+                    eligibleBlockers.clear();
+                    return;
+                }
+                
                 currentPlayer->arrest(*target);
+
+                std::vector<Player*>& allPlayers = game->get_players();
+                for (Player* p : allPlayers) {
+                    if (p != target) {
+                        p->set_lastArrested(false);
+                    }
+                }
+
+                target->set_lastArrested(true);
                 
                 // Handle General defensive ability
                 if (dynamic_cast<General*>(target)) {
@@ -817,6 +847,7 @@ void GameGui::executeAction(GameAction action) {
             updateInfoPanel(currentPlayer->get_name() + " used " + actionName);
             gamePhase = 0;
             nextPlayer();
+            updateActionButtonVisibility();
             break;
     
             
@@ -842,6 +873,7 @@ void GameGui::executeAction(GameAction action) {
                 currentPlayer->tax();
                 updateInfoPanel(currentPlayer->get_name() + " used " + actionName);
                 gamePhase = 0;
+                updateActionButtonVisibility();
                 nextPlayer();
             }
             break;
@@ -866,7 +898,7 @@ void GameGui::executeAction(GameAction action) {
                 //nextPlayer();
                 // Don't call nextPlayer() for bribe
             }
-            
+            updateActionButtonVisibility();
             break;
             
         case GameAction::ARREST:
@@ -883,6 +915,7 @@ void GameGui::executeAction(GameAction action) {
             updateInfoPanel(currentPlayer->get_name() + " wants to use " + actionName + " - Choose target:");
             gamePhase = 1; // Target selection phase
             setupTargetSelection();
+            updateActionButtonVisibility();
             break;
             
         case GameAction::SANCTION:
@@ -894,7 +927,8 @@ void GameGui::executeAction(GameAction action) {
             actionName = "Sanction";
             updateInfoPanel(currentPlayer->get_name() + " wants to use " + actionName + " - Choose target:");
             gamePhase = 1; // Target selection phase
-            setupTargetSelection();    
+            setupTargetSelection();  
+            updateActionButtonVisibility();  
             break;
             
         case GameAction::COUP:
@@ -910,6 +944,7 @@ void GameGui::executeAction(GameAction action) {
             //gamePhase = 2; // Block/Allow phase
             phaseText.setString("Phase: Block Response");
             instructionText.setString("Other players can Block or allow:");
+            updateActionButtonVisibility();
             break;
         
         case GameAction::INVEST:{
@@ -924,6 +959,7 @@ void GameGui::executeAction(GameAction action) {
             updateInfoPanel(currentPlayer->get_name() + " used " + actionName);
             gamePhase = 0;
             nextPlayer();
+            updateActionButtonVisibility();
             break;
         }
         case GameAction::REVEAL:{
@@ -937,6 +973,7 @@ void GameGui::executeAction(GameAction action) {
             updateInfoPanel(currentPlayer->get_name() + " wants to " + actionName + " - Choose target:");
             gamePhase = 1; // Target selection phase
             setupTargetSelection();
+            updateActionButtonVisibility();
             break;
         }
         
@@ -990,7 +1027,6 @@ void GameGui::nextPlayer() {
         currentPlayer->set_canArrest(true);
         updateInfoPanel(currentPlayer->get_name() + "'s arrest ban has been lifted!");
     }
-    
     // Move to next active player
     do {
         if(isBribe){
@@ -1044,12 +1080,46 @@ void GameGui::updateActionButtonVisibility() {
         bool shouldShow = true;
         
         switch (availableActions[i]) {
+            case GameAction::GATHER:
+                // Hide gather if player is sanctioned
+                shouldShow = !currentPlayer->get_isSanction();
+                break;
+                
+            case GameAction::TAX:
+                // Hide tax if player is sanctioned
+                shouldShow = !currentPlayer->get_isSanction();
+                break;
+                
+            case GameAction::BRIBE:
+                // Hide bribe if player doesn't have enough coins
+                shouldShow = currentPlayer->get_coins() >= 4;
+                break;
+                
+            case GameAction::ARREST:
+                // Hide arrest if player can't arrest or doesn't have enough coins
+                shouldShow = currentPlayer->get_canArrest() && currentPlayer->get_coins() >= 1;
+                break;
+                
+            case GameAction::SANCTION:
+                // Hide sanction if player doesn't have enough coins
+                shouldShow = currentPlayer->get_coins() >= 3;
+                break;
+                
+            case GameAction::COUP:
+                // Hide coup if player doesn't have enough coins
+                shouldShow = currentPlayer->get_coins() >= 7;
+                break;
+                
             case GameAction::INVEST:
+                // Only Baron can invest
                 shouldShow = dynamic_cast<Baron*>(currentPlayer) != nullptr;
                 break;
+                
             case GameAction::REVEAL:
+                // Only Spy can reveal
                 shouldShow = dynamic_cast<Spy*>(currentPlayer) != nullptr;
                 break;
+                
             default:
                 shouldShow = true;
                 break;
