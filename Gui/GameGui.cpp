@@ -425,17 +425,25 @@ void GameGui::executeTargetedAction(int targetIndex) {
             }
             break;
             
-        case GameAction::ARREST:
-        case GameAction::SANCTION:
+       case GameAction::ARREST:
             waitingForBlock = true;
             lastAction = pendingAction;
-            actionName = (pendingAction == GameAction::ARREST) ? "Arrest" : "Sanction";
+            actionName = "Arrest";
             updateInfoPanel(currentPlayer->get_name() + " wants to " + actionName + " " + target->get_name() + " - Can be blocked!");
             gamePhase = 2;
             phaseText.setString("Phase: Block Response");
             instructionText.setString("Target or others can block:");
             break;
             
+        case GameAction::SANCTION:
+            waitingForBlock = true;
+            lastAction = pendingAction;
+            actionName = "Sanction";
+            updateInfoPanel(currentPlayer->get_name() + " wants to " + actionName + " " + target->get_name() + " - Can be blocked!");
+            gamePhase = 2;
+            phaseText.setString("Phase: Block Response");
+            instructionText.setString("Target or others can block:");
+            break;
         default:
             break;
         

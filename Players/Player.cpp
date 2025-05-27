@@ -59,7 +59,7 @@
         _is_active = isActive;
     }
      void Player::set_isSanction(const bool isSanction){
-        _is_active = isSanction;
+        _is_sanction = isSanction;
     }
 
     void Player::gather(){
