@@ -47,6 +47,9 @@ private:
     int lastActionTarget;
     std::vector<std::string> roleNames;
     bool isBribe;
+    std::vector<int> eligibleBlockers;      // Indices of players who can block
+    int currentBlockerIndex;                // Current blocker being asked
+    std::string currentBlockerName;         // Name of current blocker for display
     
     // UI Elements
     sf::Text titleText;
@@ -103,6 +106,7 @@ private:
     bool hasGeneralToBlock();
     bool hasGovernorToBlock();
     bool hasJudgeToBlock();
+    void startBlockingSequence();
     void handleBlock();
     void handleAllow();
     bool isPointInButton(sf::Vector2i point, const sf::RectangleShape& button);
@@ -110,6 +114,9 @@ private:
     void setupTargetSelection();
     void nextPlayer();
     void updateInfoPanel(const std::string& message);
+  
+    void showCurrentBlockerOption();
+    void executeAllowedAction();
     
 public:
     GameGui(int playerCount);
