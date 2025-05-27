@@ -100,6 +100,12 @@ private:
     sf::Color buttonHoverColor;
     sf::Color textColor;
     
+    //Reset 
+    sf::RectangleShape alwaysResetButton;
+    sf::Color defaultResetColor;
+    sf::Color hoverResetColor;
+    sf::Text alwaysResetText;
+
     // Methods
     void initializeColors();
     void initializePlayers();
