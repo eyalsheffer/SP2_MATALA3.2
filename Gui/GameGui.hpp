@@ -98,6 +98,7 @@ private:
     void handleMouseMove(sf::Vector2i mousePos);
     void executeTargetedAction(int targetIndex);
     bool hasGeneralToBlock();
+    bool hasGovernorToBlock();
     void handleBlock();
     void handleAllow();
     bool isPointInButton(sf::Vector2i point, const sf::RectangleShape& button);

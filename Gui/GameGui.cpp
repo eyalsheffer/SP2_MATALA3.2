@@ -455,6 +455,17 @@ bool GameGui::hasGeneralToBlock() {
     }
     return false;
 }
+bool GameGui::hasGovernorToBlock() {
+    std::vector<Player*>& players = game->get_players();
+    for (Player* p : players) {
+        if (p->get_name() != players[game->get_turn()]->get_name() && 
+            dynamic_cast<Governor*>(p) && 
+            p->get_isActive()) {
+            return true;
+        }
+    }
+    return false;
+}
 
 void GameGui::handleBlock() {
     std::vector<Player*>& players = game->get_players();
@@ -616,14 +627,21 @@ void GameGui::executeAction(GameAction action) {
             else{
                 actionName = "Tax (+2 coins)";
             }
-            //currentPlayer->tax();
-            waitingForBlock = true;
-            lastAction = action;
-            pendingAction = action;
-            updateInfoPanel(currentPlayer->get_name() + " used " + actionName + " - Governors can block!");
-            gamePhase = 2;
-            phaseText.setString("Phase: Block Response");
-            instructionText.setString("Governors can block this tax:");
+           if (hasGovernorToBlock()) {
+                waitingForBlock = true;
+                lastAction = action;
+                pendingAction = action;
+                updateInfoPanel(currentPlayer->get_name() + " used " + actionName + " - Governors can block!");
+                gamePhase = 2;
+                phaseText.setString("Phase: Block Response");
+                instructionText.setString("Governors can block this tax:");
+            } else {
+                // No Governors to block, execute immediately
+                currentPlayer->tax();
+                updateInfoPanel(currentPlayer->get_name() + " used " + actionName);
+                gamePhase = 0;
+                nextPlayer();
+            }
             break;
             
         case GameAction::BRIBE:
