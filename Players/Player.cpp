@@ -10,12 +10,14 @@
         _is_sanction = false;
         //_last_arrested = nullptr;
         _is_active = true;
+        _can_arrest = true;
     }
     Player::Player(Player& other){
         _coins = other._coins;
         _name = other._name;
         _is_sanction = other._is_sanction;
         _is_active = other._is_active;
+        _can_arrest = other._can_arrest;
         std::cout << "Player '" << _name << "' created" << std::endl;
         //_last_arrested = other._last_arrested;
         //_last_arrested = other._last_arrested ? new Player(*other._last_arrested) : nullptr;
@@ -31,6 +33,7 @@
             _name = other._name;
             _is_sanction = other._is_sanction;
             _is_active = other._is_active;
+            _can_arrest = other._can_arrest;
             //delete _last_arrested;
             //_last_arrested = other._last_arrested ? new Player(*other._last_arrested) : nullptr;
         }
@@ -49,6 +52,9 @@
     bool Player::get_isActive(){
         return _is_active;
     }
+    bool Player::get_canArrest(){
+        return _can_arrest;
+    }
 
     void Player::set_name(const std::string& name){
         _name = name;
@@ -61,6 +67,9 @@
     }
      void Player::set_isSanction(const bool isSanction){
         _is_sanction = isSanction;
+    }
+     void Player::set_canArrest(const bool canArrest){
+        _can_arrest = canArrest;
     }
 
     void Player::gather(){

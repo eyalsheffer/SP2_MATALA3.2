@@ -50,6 +50,7 @@ GameGui::GameGui(int playerCount)
     
     gamePhase = 0;
     targetPlayer = -1;
+    isBribe = false;
 
     std::cout << "Constructor completed successfully" << std::endl;
     updateInfoPanel("Game Started! Player 1's turn.");
@@ -78,11 +79,10 @@ void GameGui::initializePlayers() {
     playersGui.resize(numPlayers);
     players.reserve(numPlayers);
 
-    std::vector<std::string> availableRoles = roleNames;
-    // Add more roles if we have more players than role types
-    while (availableRoles.size() < static_cast<std::size_t>(numPlayers)) {
-        availableRoles.insert(availableRoles.end(), roleNames.begin(), roleNames.end());
-    }
+   std::vector<std::string> availableRoles(numPlayers);
+    for (int i = 0; i < numPlayers; ++i) {
+        availableRoles[i] = roleNames[rng() % roleNames.size()];
+    }      
     std::shuffle(availableRoles.begin(), availableRoles.end(), rng);
     
     for (int i = 0; i < numPlayers; i++) {
@@ -223,6 +223,8 @@ void GameGui::initializeUI() {
 void GameGui::initializeActionButtons() {
     // Define available actions
     availableActions = {
+        GameAction::INVEST,
+        GameAction::REVEAL,
         GameAction::GATHER,
         GameAction::TAX,
         GameAction::BRIBE,
@@ -232,6 +234,8 @@ void GameGui::initializeActionButtons() {
     };
     
     std::vector<std::string> actionNames = {
+        "Invest (+3)",
+        "Reveal (free)",
         "Gather (+1)",
         "Tax (+2)",
         "Bribe (-4)",
@@ -405,6 +409,12 @@ void GameGui::executeTargetedAction(int targetIndex) {
     std::string actionName;
     
     switch (pendingAction) {
+         case GameAction::GATHER:
+        break;
+        case GameAction::TAX:
+            break;
+        case GameAction::BRIBE:
+            break;
         case GameAction::COUP:
             actionName = "Coup";
             if (hasGeneralToBlock()) {
@@ -444,6 +454,20 @@ void GameGui::executeTargetedAction(int targetIndex) {
             phaseText.setString("Phase: Block Response");
             instructionText.setString("Target or others can block:");
             break;
+        case GameAction::REVEAL:{
+            if(!dynamic_cast<Spy*>(currentPlayer)){
+                updateInfoPanel("Only Spy can reveal!");
+                return;
+            }
+            Spy* spy = dynamic_cast<Spy*>(currentPlayer);
+            spy->reveal(*target);
+            actionName = "reveal";
+            updateInfoPanel(currentPlayer->get_name() + " revealed " + target->get_name());
+            targetButtons.clear();
+            targetButtonTexts.clear();
+            gamePhase = 0;
+            break;
+        }
         default:
             break;
         
@@ -564,14 +588,15 @@ void GameGui::handleAllow() {
             break;
 
         case GameAction::BRIBE:
-             currentPlayer->bribe();
+            isBribe = true;
+            currentPlayer->bribe();
             actionName = "Bribe";
             // Player gets another turn - don't call nextPlayer()
             gamePhase = 0;
             targetPlayer = -1;
             waitingForBlock = false;
             phaseText.setString("Phase: Action Selection");
-            instructionText.setString("Choose another action (Bribe bonus turn):");
+            instructionText.setString("Choose 2 more actions (Bribe bonus turn):");
             updateInfoPanel("Bribe executed - " + currentPlayer->get_name() + " gets another turn!");
             updatePlayerDisplay();
             return;
@@ -681,7 +706,7 @@ void GameGui::executeAction(GameAction action) {
                 updateInfoPanel("Not enough coins for Bribe! (Need 4 coins)");
                 return;
             }
-             if (hasJudgeToBlock()) {//////////////////////////////////////
+             if (hasJudgeToBlock()) {
                 waitingForBlock = true;
                 lastAction = action;
                 pendingAction = action;
@@ -696,18 +721,14 @@ void GameGui::executeAction(GameAction action) {
                 gamePhase = 0;
                 nextPlayer();
             }
-            // Check if any Judge can block this
-            // waitingForBlock = true;
-            // lastAction = action;
-            // pendingAction = action;
-            // actionName = "Bribe (-4 coins, extra turn)";
-            // updateInfoPanel(currentPlayer->get_name() + " wants to " + actionName + " - Judges can block!");
-            // gamePhase = 2;
-            // phaseText.setString("Phase: Block Response");
-            // instructionText.setString("Judges can block this bribe:");
+            
             break;
             
         case GameAction::ARREST:
+            if(!currentPlayer->get_canArrest()){
+                updateInfoPanel(currentPlayer->get_name() + "cannot arrest! choose other action!");
+                return;
+            }
             if (currentPlayer->get_coins() < 1) {
                 updateInfoPanel("Not enough coins for Arrest!");
                 return;
@@ -745,7 +766,34 @@ void GameGui::executeAction(GameAction action) {
             phaseText.setString("Phase: Block Response");
             instructionText.setString("Other players can Block or allow:");
             break;
+        
+        case GameAction::INVEST:{
             
+            if(!dynamic_cast<Baron*>(currentPlayer)){
+                updateInfoPanel("Only Baron can invest!");
+                return;
+            }
+            Baron* baron = dynamic_cast<Baron*>(currentPlayer);
+            baron->invest();
+            actionName = "Invest (+3 coin)";
+            updateInfoPanel(currentPlayer->get_name() + " used " + actionName);
+            gamePhase = 0;
+            nextPlayer();
+            break;
+        }
+        case GameAction::REVEAL:{
+            if(!dynamic_cast<Spy*>(currentPlayer)){
+                updateInfoPanel("Only Spy can reveal!");
+                return;
+            }
+            //Spy* spy = dynamic_cast<Spy*>(currentPlayer);
+            pendingAction = action;
+            actionName = "Reveal";
+            updateInfoPanel(currentPlayer->get_name() + " wants to " + actionName + " - Choose target:");
+            gamePhase = 1; // Target selection phase
+            setupTargetSelection();
+            break;
+        }
         
     }
     
@@ -789,17 +837,31 @@ void GameGui::nextPlayer() {
     Player* currentPlayer = players[game->get_turn()];
     
     // Clear sanctions from previous turn
-     if (currentPlayer->get_isSanction()) {
+    if (currentPlayer->get_isSanction()) {
         currentPlayer->set_isSanction(false);
         updateInfoPanel(currentPlayer->get_name() + "'s sanction has been lifted!");
+    }
+    if (!currentPlayer->get_canArrest()) {
+        currentPlayer->set_canArrest(true);
+        updateInfoPanel(currentPlayer->get_name() + "'s arrest ban has been lifted!");
     }
     
     // Move to next active player
     do {
+        if(isBribe){
+            isBribe = false;
+            break;
+        }
         game->set_turn((game->get_turn() + 1) % numPlayers);
     } while (!players[game->get_turn()]->get_isActive());
+
+
     if(dynamic_cast<Merchant*>(players[game->get_turn()]) && players[game->get_turn()]->get_coins() > 2){
         players[game->get_turn()]->set_coins(players[game->get_turn()]->get_coins() + 1);
+    }
+
+    if(players[game->get_turn()]->get_coins() > 9){
+        executeAction(GameAction::COUP);
     }
     updateCurrentPlayerDisplay();
     updatePlayerDisplay();

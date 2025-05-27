@@ -9,6 +9,7 @@ class Spy : public Player{
 
     public:
     Spy (const std::string& name):Player(name){};
+    void reveal(Player& other);
 
 };
 #endif

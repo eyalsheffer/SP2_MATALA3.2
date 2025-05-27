@@ -13,7 +13,9 @@ enum class GameAction {
     BRIBE,
     ARREST,
     SANCTION,
-    COUP,     
+    COUP,
+    INVEST,
+    REVEAL,     
 };
 
 struct PlayerGui {
@@ -44,6 +46,7 @@ private:
     GameAction lastAction;
     int lastActionTarget;
     std::vector<std::string> roleNames;
+    bool isBribe;
     
     // UI Elements
     sf::Text titleText;

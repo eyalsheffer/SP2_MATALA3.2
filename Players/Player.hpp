@@ -10,6 +10,7 @@ class Player{
     int _coins;
     bool _is_sanction;
     bool _is_active;
+    bool _can_arrest;
     //Player* _last_arrested;
 
     public:
@@ -23,11 +24,13 @@ class Player{
     int get_coins();
     bool get_isSanction();
     bool get_isActive();
+    bool get_canArrest();
 
     void set_name(const std::string& name);
     void set_coins(const int coins);
     void set_isActive(const bool isActive);
     void set_isSanction(bool sanctioned);
+    void set_canArrest(bool sanctioned);
 
     void gather();
     virtual void tax();
