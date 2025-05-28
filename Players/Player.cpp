@@ -8,7 +8,6 @@
         _coins = 0;
         _name = name;
         _is_sanction = false;
-        //_last_arrested = nullptr;
         _is_active = true;
         _can_arrest = true;
         _last_arrested = false;
@@ -21,12 +20,9 @@
         _can_arrest = other._can_arrest;
         _last_arrested = other._last_arrested;
         std::cout << "Player '" << _name << "' created" << std::endl;
-        //_last_arrested = other._last_arrested;
-        //_last_arrested = other._last_arrested ? new Player(*other._last_arrested) : nullptr;
     }
     Player::~Player(){
          std::cout << "Player '" << _name << "' destroyed" << std::endl;
-         //delete _last_arrested ;
     }
 
     Player& Player::operator=(Player& other) {
@@ -37,8 +33,7 @@
             _is_active = other._is_active;
             _can_arrest = other._can_arrest;
             _last_arrested = other._last_arrested;
-            //delete _last_arrested;
-            //_last_arrested = other._last_arrested ? new Player(*other._last_arrested) : nullptr;
+            
         }
         return *this;
     }
@@ -101,7 +96,6 @@
     void Player::arrest(Player& other){
         _coins++;
         other._coins--;   
-        //other._last_arrested = this;
         if(dynamic_cast<General*>(&other)){
             _coins--;
             other._coins++;

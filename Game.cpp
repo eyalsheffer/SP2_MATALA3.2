@@ -36,16 +36,3 @@ std::string Game::winner(){
     }
     throw std::runtime_error("No winner yet or multiple players still active");
 }
-
-// void Game::add_player(Player* p){
-//     _players.push_back(p);
-// }
-
-// void Game::make_action(){
-//      if (_players.empty()) {
-//         std::cout << "Error: No players in game!" << std::endl;
-//         return;
-//     }
-//     _turn++;
-//     _turn %= _players.size();
-// }
