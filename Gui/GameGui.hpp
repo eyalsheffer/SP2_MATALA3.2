@@ -125,6 +125,7 @@ private:
     bool hasJudgeToBlock();
     bool canPlayerTakeAction();
     bool isValidArrestTarget(Player* target);
+    bool isValidSanctionTarget( Player* target);
     void startBlockingSequence();
     void handleBlock();
     void handleAllow();

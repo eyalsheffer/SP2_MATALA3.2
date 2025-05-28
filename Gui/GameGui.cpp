@@ -93,7 +93,6 @@ void GameGui::initializePlayers() {
         std::string role = availableRoles[i];
         
         // Create player based on role
-        //Player* newPlayer = PlayerFactory::createPlayer(role, playerName);
         newPlayer = PlayerFactory::createPlayer(role, playerName);
         
         newPlayer->set_coins(2);  
@@ -387,8 +386,7 @@ void GameGui::updatePlayerDisplay() {
         } else {
             playersGui[i].coinsText.setString("Coins: ???");
         }
-        //playersGui[i].coinsText.setString("Coins: " + std::to_string(game->get_players()[i]->get_coins()));
-        //players[i].influenceText.setString("Cards: " + std::to_string(players[i].influence));
+        
     }
 }
 
@@ -478,19 +476,46 @@ void GameGui::handleMouseMove(sf::Vector2i mousePos) {
                     break;
                     
                 case GameAction::ARREST:
-                    isAvailable = currentPlayer->get_canArrest() && currentPlayer->get_coins() >= 1;
-                    break;
+                    isAvailable = currentPlayer->get_canArrest();
+                     if (isAvailable) {
+                    // Check if there are any valid arrest targets
+                    std::vector<Player*>& players = game->get_players();
+                    bool hasValidTarget = false;
                     
-                case GameAction::SANCTION:
-                    isAvailable = currentPlayer->get_coins() >= 3;
-                    break;
+                    for (int j = 0; j < numPlayers; j++) {
+                        if (j != game->get_turn() && players[j]->get_isActive()) {
+                            if (isValidArrestTarget(players[j])) {
+                                hasValidTarget = true;
+                                break;
+                            }
+                        }
+                    }
                     
+                    isAvailable = hasValidTarget;
+                }
+                break;
+                    
+                case GameAction::SANCTION:{
+                    std::vector<Player*>& players = game->get_players();
+                    bool hasValidTarget = false;
+                    
+                    for (int j = 0; j < numPlayers; j++) {
+                        if (j != game->get_turn() && players[j]->get_isActive()) {
+                            if (isValidSanctionTarget(players[j])) {
+                                hasValidTarget = true;
+                                break;
+                            }
+                        }
+                    }
+                    isAvailable = hasValidTarget;  
+                    break;
+                }       
                 case GameAction::COUP:
                     isAvailable = currentPlayer->get_coins() >= 7;
                     break;
                     
                 case GameAction::INVEST:
-                    isAvailable = dynamic_cast<Baron*>(currentPlayer) != nullptr;
+                    isAvailable = dynamic_cast<Baron*>(currentPlayer) != nullptr && currentPlayer->get_coins() >= 3;
                     break;
                     
                 case GameAction::REVEAL:
@@ -644,7 +669,18 @@ void GameGui::executeTargetedAction(int targetIndex) {
             nextPlayer();
             break;
        }  
-        case GameAction::SANCTION:
+        case GameAction::SANCTION:{
+         int requiredCoins = 3; // Default cost
+            if (dynamic_cast<Judge*>(target)) {
+                requiredCoins = 4; // Extra cost for sanctioning a Judge
+            }
+            if (currentPlayer->get_coins() < requiredCoins) {
+                updateInfoPanel("Not enough coins to sanction " + target->get_name() + "! (Need " + std::to_string(requiredCoins) + " coins)");
+                targetButtons.clear();
+                targetButtonTexts.clear();
+                gamePhase = 0;
+                return;
+            }
              currentPlayer->sanction(*target);
             actionName = "Sanction";
             
@@ -660,6 +696,7 @@ void GameGui::executeTargetedAction(int targetIndex) {
             gamePhase = 0;
             nextPlayer();
             break;
+        }
         
         case GameAction::REVEAL:{
             if(!dynamic_cast<Spy*>(currentPlayer)){
@@ -737,10 +774,6 @@ bool GameGui::hasJudgeToBlock() {
 bool GameGui::canPlayerTakeAction() {
     Player* currentPlayer = game->get_players()[game->get_turn()];
     
-    // If player is sanctioned, they can only gather
-    // if (!currentPlayer->get_isSanction()) {
-    //     return true; // They can always gather (unless we want to add more restrictions)
-    // }
     
     // Check if player has any available actions
     bool hasAvailableAction = false;
@@ -766,7 +799,7 @@ bool GameGui::canPlayerTakeAction() {
             }
         }
     }
-    if (dynamic_cast<Baron*>(currentPlayer)) hasAvailableAction = true; // Invest
+    if (dynamic_cast<Baron*>(currentPlayer) && currentPlayer->get_coins() >= 3) hasAvailableAction = true; // Invest
     
     
     return hasAvailableAction;
@@ -789,6 +822,19 @@ bool GameGui::isValidArrestTarget(Player* target) {
     }
     
     return true;
+}
+
+bool GameGui::isValidSanctionTarget(Player* target){
+    Player* currentPlayer = game->get_players()[game->get_turn()];
+    if(currentPlayer->get_coins() < 3){
+        return false;
+    }
+
+    if (dynamic_cast<Judge*>(target) && currentPlayer->get_coins() < 4) {
+        return false;
+    }
+    return true;
+
 }
 
 void GameGui::startBlockingSequence() {
@@ -1179,6 +1225,10 @@ void GameGui::executeAction(GameAction action) {
                 updateInfoPanel("Only Baron can invest!");
                 return;
             }
+            if (currentPlayer->get_coins() < 3) {
+                updateInfoPanel("Not enough coins for Invest! (Need 3 coins)");
+                return;
+            }
             Baron* baron = dynamic_cast<Baron*>(currentPlayer);
             baron->invest();
             actionName = "Invest (+3 coin)";
@@ -1193,7 +1243,6 @@ void GameGui::executeAction(GameAction action) {
                 updateInfoPanel("Only Spy can reveal!");
                 return;
             }
-            //Spy* spy = dynamic_cast<Spy*>(currentPlayer);
             pendingAction = action;
             actionName = "Reveal";
             updateInfoPanel(currentPlayer->get_name() + " wants to " + actionName + " - Choose target:");
@@ -1203,13 +1252,10 @@ void GameGui::executeAction(GameAction action) {
             break;
         }
         
-    }
-    
-    //updateInfoPanel(game->get_players()[game->get_turn()]->get_name() + " chose " + actionName);
+    }   
     updatePlayerDisplay();
-
 }
-///checkkkkkkkkkkkkkkkkkkkkkk
+
 void GameGui::setupTargetSelection() {
     phaseText.setString("Phase: Target Selection");
     instructionText.setString("Choose target player:");
@@ -1225,6 +1271,9 @@ void GameGui::setupTargetSelection() {
         if (i != currentTurn && players[i]->get_isActive()) {
 
             if (pendingAction == GameAction::ARREST && !isValidArrestTarget(players[i])) {
+                continue;
+            }
+            if (pendingAction == GameAction::SANCTION && !isValidSanctionTarget(players[i])) {
                 continue;
             }
 
@@ -1333,15 +1382,43 @@ void GameGui::updateActionButtonVisibility() {
                 break;
                 
             case GameAction::ARREST:
-                // Hide arrest if player can't arrest or doesn't have enough coins
-                shouldShow = currentPlayer->get_canArrest() && currentPlayer->get_coins() >= 1;
+                // Hide arrest if player can't arrest 
+                shouldShow = currentPlayer->get_canArrest();
+                if (shouldShow) {
+                    // Check if there are any valid arrest targets
+                    std::vector<Player*>& players = game->get_players();
+                    bool hasValidTarget = false;
+                    
+                    for (int j = 0; j < numPlayers; j++) {
+                        if (j != game->get_turn() && players[j]->get_isActive()) {
+                            if (isValidArrestTarget(players[j])) {
+                                hasValidTarget = true;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    shouldShow = hasValidTarget;
+                }
                 break;
                 
-            case GameAction::SANCTION:
+            case GameAction::SANCTION:{
                 // Hide sanction if player doesn't have enough coins
-                shouldShow = currentPlayer->get_coins() >= 3;
-                break;
+                std::vector<Player*>& players = game->get_players();
+                bool hasValidTarget = false;
                 
+                for (int j = 0; j < numPlayers; j++) {
+                    if (j != game->get_turn() && players[j]->get_isActive()) {
+                        if (isValidSanctionTarget(players[j])) {
+                            hasValidTarget = true;
+                            break;
+                        }
+                    }
+                }
+                
+                shouldShow = hasValidTarget;
+                break;
+            }  
             case GameAction::COUP:
                 // Hide coup if player doesn't have enough coins
                 shouldShow = currentPlayer->get_coins() >= 7;
@@ -1349,12 +1426,12 @@ void GameGui::updateActionButtonVisibility() {
                 
             case GameAction::INVEST:
                 // Only Baron can invest
-                shouldShow = dynamic_cast<Baron*>(currentPlayer) != nullptr;
+                shouldShow = dynamic_cast<Baron*>(currentPlayer) != nullptr  && currentPlayer->get_coins() >= 3;
                 break;
                 
             case GameAction::REVEAL:
                 // Only Spy can reveal
-                shouldShow = dynamic_cast<Spy*>(currentPlayer) != nullptr;
+                shouldShow = dynamic_cast<Spy*>(currentPlayer) != nullptr && currentPlayer->get_coins() >= 3;
                 break;
                 
             default:
