@@ -136,7 +136,7 @@ private:
     void updateInfoPanel(const std::string& message);
   
     void showCurrentBlockerOption();
-    void executeAllowedAction();
+    //void executeAllowedAction();
 
     void updateActionButtonVisibility();
 
