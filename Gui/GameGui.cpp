@@ -2,6 +2,7 @@
 #include <iostream>
 //#include <string>
 #include <cmath>
+#include <sstream>
 
 #include "../Players/General.hpp"
 #include "../Players/Judge.hpp"
@@ -1159,10 +1160,10 @@ void GameGui::executeAction(GameAction action) {
                 updateInfoPanel(currentPlayer->get_name() + "cannot arrest! choose other action!");
                 return;
             }
-            if (currentPlayer->get_coins() < 1) {
-                updateInfoPanel("Not enough coins for Arrest!");
-                return;
-            }
+            // if (currentPlayer->get_coins() < 1) {
+            //     updateInfoPanel("Not enough coins for Arrest!");
+            //     return;
+            // }
 
             {//Check if there are any valid arrest targets
                 std::vector<Player*>& players = game->get_players();
@@ -1342,21 +1343,32 @@ void GameGui::nextPlayer() {
 
 void GameGui::updateInfoPanel(const std::string& message) {
     std::string currentText = infoPanelText.getString();
+     if (!currentText.empty()) {
+        currentText += "\n" + message;
+    } else {
+        currentText = "Game Log:\n" + message;
+    }
+    std::vector<std::string> lines;
+    std::stringstream ss(currentText);
+    std::string line;
     
-    // Keep last few lines of log
-    size_t lineCount = 0;
-    size_t pos = currentText.length();
-    while (pos > 0 && lineCount < 12) {
-        pos = currentText.find_last_of('\n', pos - 1);
-        if (pos == std::string::npos) break;
-        lineCount++;
+    while (std::getline(ss, line)) {
+        lines.push_back(line);
     }
     
-    if (lineCount >= 12 && pos != std::string::npos) {
-        currentText = currentText.substr(pos + 1);
+    const int maxLines = 10;
+    if (lines.size() > maxLines) {
+        lines.erase(lines.begin(), lines.end() - maxLines);
     }
     
-    infoPanelText.setString(currentText + "\n" + message);
+    // Reconstruct the text
+    std::string newText = "";
+    for (size_t i = 0; i < lines.size(); i++) {
+        if (i > 0) newText += "\n";
+        newText += lines[i];
+    }
+    
+    infoPanelText.setString(newText);
 }
 
 void GameGui::updateActionButtonVisibility() {
@@ -1431,7 +1443,7 @@ void GameGui::updateActionButtonVisibility() {
                 
             case GameAction::REVEAL:
                 // Only Spy can reveal
-                shouldShow = dynamic_cast<Spy*>(currentPlayer) != nullptr && currentPlayer->get_coins() >= 3;
+                shouldShow = dynamic_cast<Spy*>(currentPlayer) != nullptr;
                 break;
                 
             default:
