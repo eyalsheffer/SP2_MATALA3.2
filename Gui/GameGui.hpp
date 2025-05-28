@@ -46,7 +46,7 @@ private:
     GameAction lastAction;
     int lastActionTarget;
     std::vector<std::string> roleNames;
-    bool isBribe;
+    //bool isBribe;
     
     std::vector<int> eligibleBlockers;      // Indices of players who can block
     int currentBlockerIndex;                // Current blocker being asked
@@ -123,7 +123,7 @@ private:
     bool hasGeneralToBlock();
     bool hasGovernorToBlock();
     bool hasJudgeToBlock();
-    bool canPlayerTakeAction();
+    //bool canPlayerTakeAction();
     bool isValidArrestTarget(Player* target);
     bool isValidSanctionTarget( Player* target);
     void startBlockingSequence();
@@ -132,7 +132,7 @@ private:
     bool isPointInButton(sf::Vector2i point, const sf::RectangleShape& button);
     void executeAction(GameAction action);
     void setupTargetSelection();
-    void nextPlayer();
+    //void nextPlayer();
     void updateInfoPanel(const std::string& message);
   
     void showCurrentBlockerOption();

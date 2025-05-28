@@ -25,6 +25,7 @@ class Game{
         bool is_current( Player& p) const;
         void check_valid_move( Player& p) const;
         void turn_manager();
+        bool have_arrests_options(Player& p) const;
         bool can_take_action( Player& p) const;
         //void add_player(Player* p);
         //void make_action();

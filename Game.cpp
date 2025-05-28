@@ -59,31 +59,33 @@ void Game::check_valid_move( Player& p) const{
     }
 
 }  
-
-bool Game::can_take_action(Player& p) const{
-    bool res = false;
-    if(!p.get_isSanction()){
-        res = true;
+bool Game::have_arrests_options(Player& p) const{
+    if (!p.get_canArrest()) {
+        return false;
     }
-    if(p.get_coins() > 2){
-        res = true;
-    }
-    if(dynamic_cast<Baron*>(&p) && p.get_coins() > 2){
-        res = true;
-    }
-   if (p.get_canArrest()) {
-        for (int i = 0; i < static_cast<int>(_players.size()); ++i) {
-            Player* player = _players[i];
-            if (i != _turn && player->get_isActive() && !player->get_lastArrested()) {
-                int coins = player->get_coins();
-                if (coins > 0 || (dynamic_cast<Merchant*>(player) && coins > 1)) {
-                    res = true;
-                    break;
-                }
+    for (int i = 0; i < static_cast<int>(_players.size()); ++i) {
+        Player* player = _players[i];
+        if (i != _turn && player->get_isActive() && !player->get_lastArrested()) {
+            int coins = player->get_coins();
+            if (coins > 0 || (dynamic_cast<Merchant*>(player) && coins > 1)) {
+                return true;
             }
         }
     }
-    return res;
+    return false;
+}
+
+bool Game::can_take_action(Player& p) const{
+    if(!p.get_isSanction()){
+        return true;
+    }
+    if(p.get_coins() > 2){
+        return true;
+    }
+    if(dynamic_cast<Baron*>(&p) && p.get_coins() > 2){
+        return true;
+    }
+    return this->have_arrests_options(p);
 }
 void Game::turn_manager(){
     if(_players.empty()){
@@ -96,14 +98,15 @@ void Game::turn_manager(){
     if(!currentPlayer->get_canArrest()){
         currentPlayer->set_canArrest(true);
     }
-    while (!_players[_turn]->get_isActive())
-    {
-        if(_is_bribe){
-            _is_bribe = false;
-            break;
-        }
-        _turn = (_turn + 1) % (static_cast<int>(_players.size()));
-    }
+    if (_is_bribe) {
+        _is_bribe = false;
+        return;  
+    }   
+
+    do {
+        _turn = (_turn + 1) % static_cast<int>(_players.size());
+    } while (!_players[_turn]->get_isActive());
+
     if(dynamic_cast<Merchant*>(_players[_turn]) && _players[_turn]->get_coins() > 2){
         _players[_turn]->set_coins(_players[_turn]->get_coins() + 1);
     }

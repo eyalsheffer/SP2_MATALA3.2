@@ -116,8 +116,8 @@
         }
         _coins-=4;
         _last_action = GameAction::BRIBE;
-        _game.set_isBribe(false);
-        _game.turn_manager();
+        _game.set_isBribe(true);
+        //_game.turn_manager();
     }
     void Player::arrest(Player& other){
 

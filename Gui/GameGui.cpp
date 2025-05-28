@@ -54,7 +54,7 @@ GameGui::GameGui(int playerCount)
     
     gamePhase = 0;
     targetPlayer = -1;
-    isBribe = false;
+    //isBribe = false;
 
     std::cout << "Constructor completed successfully" << std::endl;
     updateInfoPanel("Game Started! Player 1's turn.");
@@ -97,9 +97,9 @@ void GameGui::initializePlayers() {
         // Create player based on role
         newPlayer = PlayerFactory::createPlayer(role, *game, playerName);
         //
-        newPlayer->set_coins(2);  
-        newPlayer->set_isActive(true);
-        players.push_back(newPlayer);
+         newPlayer->set_coins(2);  
+         newPlayer->set_isActive(true);
+         players.push_back(newPlayer);
     }
     
     setupPlayerPositions();
@@ -310,7 +310,7 @@ void GameGui::initializeActionButtons() {
         GameAction::UNIQE,
     };
     
-    std::vector<std::string> actionNames = {
+    std::vector<std::string> actionNames = {///////////////////////////////////////
 
         "Gather (+1)",
         "Tax (+2)",
@@ -628,7 +628,7 @@ void GameGui::executeTargetedAction(int targetIndex) {
                 targetButtons.clear();
                 targetButtonTexts.clear();
                 gamePhase = 0;
-                nextPlayer();
+                //nextPlayer();
             }
             break;
             
@@ -674,7 +674,7 @@ void GameGui::executeTargetedAction(int targetIndex) {
             targetButtons.clear();
             targetButtonTexts.clear();
             gamePhase = 0;
-            nextPlayer();
+            //nextPlayer();
             break;
        }  
         case GameAction::SANCTION:{
@@ -702,7 +702,7 @@ void GameGui::executeTargetedAction(int targetIndex) {
             targetButtons.clear();
             targetButtonTexts.clear();
             gamePhase = 0;
-            nextPlayer();
+            //nextPlayer();
             break;
         }
         
@@ -722,7 +722,7 @@ void GameGui::executeTargetedAction(int targetIndex) {
                 targetButtons.clear();
                 targetButtonTexts.clear();
                 gamePhase = 0;
-                nextPlayer();
+                //nextPlayer();
             }
             else if(dynamic_cast<Baron*>(currentPlayer)){
                 // Baron's Invest doesn't need a target, but handle it here for completeness
@@ -795,39 +795,39 @@ bool GameGui::hasJudgeToBlock() {
     return !eligibleBlockers.empty();
 }
 
-bool GameGui::canPlayerTakeAction() {
-    Player* currentPlayer = game->get_players()[game->get_turn()];
+// bool GameGui::canPlayerTakeAction() {
+//     Player* currentPlayer = game->get_players()[game->get_turn()];
     
     
-    // Check if player has any available actions
-    bool hasAvailableAction = false;
+//     // Check if player has any available actions
+//     bool hasAvailableAction = false;
     
-    // Can always gather if not sanctioned
-    if (!currentPlayer->get_isSanction()) {
-        hasAvailableAction = true;
-    }
+//     // Can always gather if not sanctioned
+//     if (!currentPlayer->get_isSanction()) {
+//         hasAvailableAction = true;
+//     }
     
-    // Check other actions
-    if (currentPlayer->get_coins() >= 3) hasAvailableAction = true; // Sanction
-    if (currentPlayer->get_canArrest()) {
-        // Check if there are valid arrest targets
-        std::vector<Player*>& players = game->get_players();
-        for (int i = 0; i < numPlayers; i++) {
-            if (i != game->get_turn() && players[i]->get_isActive() && !players[i]->get_lastArrested()) {
-                // Check if target can be arrested (has money or is not Merchant with <2 coins)
-                if (players[i]->get_coins() > 0 || 
-                    (dynamic_cast<Merchant*>(players[i]) && players[i]->get_coins() >= 2)) {
-                    hasAvailableAction = true;
-                    break;
-                }
-            }
-        }
-    }
-    if (dynamic_cast<Baron*>(currentPlayer) && currentPlayer->get_coins() >= 3) hasAvailableAction = true; // Invest
+//     // Check other actions
+//     if (currentPlayer->get_coins() >= 3) hasAvailableAction = true; // Sanction
+//     if (currentPlayer->get_canArrest()) {
+//         // Check if there are valid arrest targets
+//         std::vector<Player*>& players = game->get_players();
+//         for (int i = 0; i < numPlayers; i++) {
+//             if (i != game->get_turn() && players[i]->get_isActive() && !players[i]->get_lastArrested()) {
+//                 // Check if target can be arrested (has money or is not Merchant with <2 coins)
+//                 if (players[i]->get_coins() > 0 || 
+//                     (dynamic_cast<Merchant*>(players[i]) && players[i]->get_coins() >= 2)) {
+//                     hasAvailableAction = true;
+//                     break;
+//                 }
+//             }
+//         }
+//     }
+//     if (dynamic_cast<Baron*>(currentPlayer) && currentPlayer->get_coins() >= 3) hasAvailableAction = true; // Invest
     
     
-    return hasAvailableAction;
-}
+//     return hasAvailableAction;
+// }
 
 bool GameGui::isValidArrestTarget(Player* target) {
     // Cannot arrest if target was arrested last turn
@@ -985,7 +985,7 @@ void GameGui::handleBlock() {
         eligibleBlockers.clear();
          phaseText.setString("Phase: Action Selection");
         instructionText.setString("Choose an action:");
-        nextPlayer();
+        //nextPlayer();
         updatePlayerDisplay();
         updateActionButtonVisibility();
     } else {
@@ -1020,7 +1020,7 @@ void GameGui::executeAllowedAction() {
 
         case GameAction::BRIBE:
             currentPlayer->bribe();
-            isBribe = true;
+            //isBribe = true;
             actionName = "Bribe";
             // Player gets another turn - don't call nextPlayer()
             gamePhase = 0;
@@ -1101,7 +1101,7 @@ void GameGui::executeAllowedAction() {
     targetPlayer = -1;
     waitingForBlock = false;
     eligibleBlockers.clear();
-    nextPlayer();
+    //nextPlayer();
     updatePlayerDisplay();
 }
 
@@ -1123,7 +1123,7 @@ void GameGui::executeAction(GameAction action) {
             actionName = "Gather (+1 coin)";
             updateInfoPanel(currentPlayer->get_name() + " used " + actionName);
             gamePhase = 0;
-            nextPlayer();
+            //nextPlayer();
             updateActionButtonVisibility();
             break;
     
@@ -1151,7 +1151,7 @@ void GameGui::executeAction(GameAction action) {
                 updateInfoPanel(currentPlayer->get_name() + " used " + actionName);
                 gamePhase = 0;
                 updateActionButtonVisibility();
-                nextPlayer();
+                //nextPlayer();
             }
             break;
             
@@ -1168,7 +1168,7 @@ void GameGui::executeAction(GameAction action) {
                 startBlockingSequence(); // Start sequential blocking
             } else {
                 // No Judge to block, execute immediately
-                isBribe = true;
+                //isBribe = true;
                 currentPlayer->bribe();
                 updateInfoPanel(currentPlayer->get_name() + " used Bribe - gets another turn!");
                 gamePhase = 0;
@@ -1256,7 +1256,7 @@ void GameGui::executeAction(GameAction action) {
                 actionName = "Invest (+3 coin)";
                 updateInfoPanel(currentPlayer->get_name() + " used " + actionName);
                 gamePhase = 0;
-                nextPlayer();
+                //nextPlayer();
                 updateActionButtonVisibility();
             }
             else if(dynamic_cast<Spy*>(currentPlayer)){
@@ -1320,51 +1320,51 @@ void GameGui::setupTargetSelection() {
     }
 }
 
-void GameGui::nextPlayer() {
-    std::vector<Player*>& players = game->get_players();
-    Player* currentPlayer = players[game->get_turn()];
+// void GameGui::nextPlayer() {
+//     std::vector<Player*>& players = game->get_players();
+//     Player* currentPlayer = players[game->get_turn()];
     
-    // Clear sanctions from previous turn
-    if (currentPlayer->get_isSanction()) {
-        currentPlayer->set_isSanction(false);
-        updateInfoPanel(currentPlayer->get_name() + "'s sanction has been lifted!");
-    }
-    if (!currentPlayer->get_canArrest()) {
-        currentPlayer->set_canArrest(true);
-        updateInfoPanel(currentPlayer->get_name() + "'s arrest ban has been lifted!");
-    }
-    // Move to next active player
-    do {
-        if(isBribe){
-            isBribe = false;
-            break;
-        }
-        game->set_turn((game->get_turn() + 1) % numPlayers);
-    } while (!players[game->get_turn()]->get_isActive());
+//     // Clear sanctions from previous turn
+//     if (currentPlayer->get_isSanction()) {
+//         currentPlayer->set_isSanction(false);
+//         updateInfoPanel(currentPlayer->get_name() + "'s sanction has been lifted!");
+//     }
+//     if (!currentPlayer->get_canArrest()) {
+//         currentPlayer->set_canArrest(true);
+//         updateInfoPanel(currentPlayer->get_name() + "'s arrest ban has been lifted!");
+//     }
+//     // Move to next active player
+//     do {
+//         if(isBribe){
+//             isBribe = false;
+//             break;
+//         }
+//         game->set_turn((game->get_turn() + 1) % numPlayers);
+//     } while (!players[game->get_turn()]->get_isActive());
 
-    //Extra coin for Merchant
-    if(dynamic_cast<Merchant*>(players[game->get_turn()]) && players[game->get_turn()]->get_coins() > 2){
-        players[game->get_turn()]->set_coins(players[game->get_turn()]->get_coins() + 1);
-    }
+//     //Extra coin for Merchant
+//     if(dynamic_cast<Merchant*>(players[game->get_turn()]) && players[game->get_turn()]->get_coins() > 2){
+//         players[game->get_turn()]->set_coins(players[game->get_turn()]->get_coins() + 1);
+//     }
 
-    if(players[game->get_turn()]->get_coins() > 9){
-        executeAction(GameAction::COUP);
-    }
+//     if(players[game->get_turn()]->get_coins() > 9){
+//         executeAction(GameAction::COUP);
+//     }
 
-    // Check if the new current player has any available actions
-    if(!canPlayerTakeAction()){
-        updateInfoPanel(currentPlayer->get_name() + " is sanctioned with no options");
-        nextPlayer();
-    }
-    updateCurrentPlayerDisplay();
-    updatePlayerDisplay();
+//     // Check if the new current player has any available actions
+//     if(!canPlayerTakeAction()){
+//         updateInfoPanel(currentPlayer->get_name() + " is sanctioned with no options");
+//         nextPlayer();
+//     }
+//     updateCurrentPlayerDisplay();
+//     updatePlayerDisplay();
     
-    revealedPlayers.clear();
-    updateActionButtonVisibility();
+//     revealedPlayers.clear();
+//     updateActionButtonVisibility();
 
-    phaseText.setString("Phase: Action Selection");
-    instructionText.setString("Choose an action:");
-}
+//     phaseText.setString("Phase: Action Selection");
+//     instructionText.setString("Choose an action:");
+// }
 
 void GameGui::updateInfoPanel(const std::string& message) {
     std::string currentText = infoPanelText.getString();
@@ -1513,7 +1513,7 @@ void GameGui::resetGame() {
     winnerName = "";
     gamePhase = 0;
     targetPlayer = -1;
-    isBribe = false;
+    //isBribe = false;
     waitingForBlock = false;
     blockingPlayer = -1;
     lastActionTarget = -1;
