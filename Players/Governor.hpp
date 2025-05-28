@@ -8,7 +8,7 @@ class Governor : public Player{
     private:
 
     public:
-    Governor (const std::string& name):Player(name){}
+    Governor (Game& game,const std::string& name):Player(game ,name){}
     void uniqe(Player& other) override;
 
 };

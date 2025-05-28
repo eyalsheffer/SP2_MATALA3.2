@@ -8,7 +8,7 @@ class Baron : public Player{
     private:
 
     public:
-    Baron (const std::string& name):Player(name){};
+    Baron (Game& game,const std::string& name):Player(game, name){};
     void uniqe() override;
 
 };

@@ -8,7 +8,7 @@ class General : public Player{
     private:
 
     public:
-    General (const std::string& name):Player(name){};
+    General (Game& game,const std::string& name):Player(game ,name){};
     void uniqe(Player& other) override;
     
 

@@ -11,6 +11,7 @@
 #include "../Players/Governor.hpp"
 #include "../Players/Spy.hpp"
 #include "../Players/PlayerFactory.hpp"
+#include "../GameAction.hpp"
 
 
 GameGui::GameGui(int playerCount) 
@@ -94,8 +95,8 @@ void GameGui::initializePlayers() {
         std::string role = availableRoles[i];
         
         // Create player based on role
-        newPlayer = PlayerFactory::createPlayer(role, playerName);
-        
+        newPlayer = PlayerFactory::createPlayer(role, *game, playerName);
+        //
         newPlayer->set_coins(2);  
         newPlayer->set_isActive(true);
         players.push_back(newPlayer);
@@ -306,8 +307,7 @@ void GameGui::initializeActionButtons() {
         GameAction::ARREST,
         GameAction::SANCTION,
         GameAction::COUP,
-         GameAction::INVEST,
-        GameAction::REVEAL
+        GameAction::UNIQE,
     };
     
     std::vector<std::string> actionNames = {
@@ -515,12 +515,18 @@ void GameGui::handleMouseMove(sf::Vector2i mousePos) {
                     isAvailable = currentPlayer->get_coins() >= 7;
                     break;
                     
-                case GameAction::INVEST:
-                    isAvailable = dynamic_cast<Baron*>(currentPlayer) != nullptr && currentPlayer->get_coins() >= 3;
-                    break;
-                    
-                case GameAction::REVEAL:
-                    isAvailable = dynamic_cast<Spy*>(currentPlayer) != nullptr;
+                case GameAction::UNIQE:
+                    // Check availability based on player role
+                    if (dynamic_cast<Baron*>(currentPlayer)) {
+                        // Baron's Invest ability
+                        isAvailable = currentPlayer->get_coins() >= 3;
+                    } else if (dynamic_cast<Spy*>(currentPlayer)) {
+                        // Spy's Reveal ability
+                        isAvailable = true; // Spy can always try to reveal
+                    } else {
+                        // Other roles have no unique ability
+                        isAvailable = false;
+                    }
                     break;
                     
                 default:
@@ -603,8 +609,9 @@ void GameGui::executeTargetedAction(int targetIndex) {
             break;
         case GameAction::BRIBE:
             break;
+        case GameAction::NONE:
+            break;
         case GameAction::COUP:
-            actionName = "Coup";
             actionName = "Coup";
             if (hasGeneralToBlock()) {
                 waitingForBlock = true;
@@ -699,26 +706,42 @@ void GameGui::executeTargetedAction(int targetIndex) {
             break;
         }
         
-        case GameAction::REVEAL:{
-            if(!dynamic_cast<Spy*>(currentPlayer)){
-                updateInfoPanel("Only Spy can reveal!");
+        case GameAction::UNIQE:{
+            // Handle role-specific unique abilities that require targets
+            if(dynamic_cast<Spy*>(currentPlayer)){
+                // Spy's Reveal ability
+                if(!dynamic_cast<Spy*>(currentPlayer)){
+                    updateInfoPanel("Only Spy can reveal!");
+                    return;
+                }
+                Spy* spy = dynamic_cast<Spy*>(currentPlayer);
+                spy->uniqe(*target);
+                revealedPlayers.push_back(actualTargetIndex);
+                actionName = "reveal";
+                updateInfoPanel(currentPlayer->get_name() + " revealed " + target->get_name());
+                targetButtons.clear();
+                targetButtonTexts.clear();
+                gamePhase = 0;
+                nextPlayer();
+            }
+            else if(dynamic_cast<Baron*>(currentPlayer)){
+                // Baron's Invest doesn't need a target, but handle it here for completeness
+                // This case shouldn't normally be reached since Invest doesn't require target selection
+                updateInfoPanel("Baron's Invest doesn't require a target!");
+                targetButtons.clear();
+                targetButtonTexts.clear();
+                gamePhase = 0;
                 return;
             }
-            Spy* spy = dynamic_cast<Spy*>(currentPlayer);
-            spy->reveal(*target);
-            revealedPlayers.push_back(actualTargetIndex);
-            actionName = "reveal";
-            updateInfoPanel(currentPlayer->get_name() + " revealed " + target->get_name());
-            targetButtons.clear();
-            targetButtonTexts.clear();
-            gamePhase = 0;
+            else {
+                updateInfoPanel(getRoleName(currentPlayer) + " has no unique ability that requires a target!");
+                targetButtons.clear();
+                targetButtonTexts.clear();
+                gamePhase = 0;
+                return;
+            }
             break;
         }
-        case GameAction::INVEST: {
-            break;
-        }
-        default:
-            break;
         
     }
     
@@ -884,10 +907,10 @@ void GameGui::showCurrentBlockerOption() {
                 break;
             case GameAction::GATHER:
                 break;
-            case GameAction::INVEST:
+            case GameAction::UNIQE:
                 break;
-            case GameAction::REVEAL:
-                break;
+            case GameAction::NONE:
+            break;
         }
          // Update the prominent blocker prompt
         std::string promptText = ">>> " + currentBlockerName + " (" + blockerRole + ") <<<\n";
@@ -1220,38 +1243,40 @@ void GameGui::executeAction(GameAction action) {
             updateActionButtonVisibility();
             break;
         
-        case GameAction::INVEST:{
-            
-            if(!dynamic_cast<Baron*>(currentPlayer)){
-                updateInfoPanel("Only Baron can invest!");
+        case GameAction::UNIQE:{
+            // Handle role-specific unique abilities
+            if(dynamic_cast<Baron*>(currentPlayer)){
+                // Baron's Invest ability
+                if (currentPlayer->get_coins() < 3) {
+                    updateInfoPanel("Not enough coins for Invest! (Need 3 coins)");
+                    return;
+                }
+                Baron* baron = dynamic_cast<Baron*>(currentPlayer);
+                baron->uniqe();
+                actionName = "Invest (+3 coin)";
+                updateInfoPanel(currentPlayer->get_name() + " used " + actionName);
+                gamePhase = 0;
+                nextPlayer();
+                updateActionButtonVisibility();
+            }
+            else if(dynamic_cast<Spy*>(currentPlayer)){
+                // Spy's Reveal ability
+                pendingAction = action;
+                actionName = "Reveal";
+                updateInfoPanel(currentPlayer->get_name() + " wants to " + actionName + " - Choose target:");
+                gamePhase = 1; // Target selection phase
+                setupTargetSelection();
+                updateActionButtonVisibility();
+            }
+            else {
+                // Player role has no unique ability
+                updateInfoPanel(getRoleName(currentPlayer) + " has no unique ability!");
                 return;
             }
-            if (currentPlayer->get_coins() < 3) {
-                updateInfoPanel("Not enough coins for Invest! (Need 3 coins)");
-                return;
-            }
-            Baron* baron = dynamic_cast<Baron*>(currentPlayer);
-            baron->invest();
-            actionName = "Invest (+3 coin)";
-            updateInfoPanel(currentPlayer->get_name() + " used " + actionName);
-            gamePhase = 0;
-            nextPlayer();
-            updateActionButtonVisibility();
             break;
         }
-        case GameAction::REVEAL:{
-            if(!dynamic_cast<Spy*>(currentPlayer)){
-                updateInfoPanel("Only Spy can reveal!");
-                return;
-            }
-            pendingAction = action;
-            actionName = "Reveal";
-            updateInfoPanel(currentPlayer->get_name() + " wants to " + actionName + " - Choose target:");
-            gamePhase = 1; // Target selection phase
-            setupTargetSelection();
-            updateActionButtonVisibility();
+        case GameAction::NONE:
             break;
-        }
         
     }   
     updatePlayerDisplay();
@@ -1436,15 +1461,12 @@ void GameGui::updateActionButtonVisibility() {
                 shouldShow = currentPlayer->get_coins() >= 7;
                 break;
                 
-            case GameAction::INVEST:
+            case GameAction::UNIQE:
                 // Only Baron can invest
-                shouldShow = dynamic_cast<Baron*>(currentPlayer) != nullptr  && currentPlayer->get_coins() >= 3;
+                shouldShow = (dynamic_cast<Baron*>(currentPlayer) != nullptr  && currentPlayer->get_coins() >= 3)
+                || (dynamic_cast<Spy*>(currentPlayer) != nullptr);
                 break;
                 
-            case GameAction::REVEAL:
-                // Only Spy can reveal
-                shouldShow = dynamic_cast<Spy*>(currentPlayer) != nullptr;
-                break;
                 
             default:
                 shouldShow = true;

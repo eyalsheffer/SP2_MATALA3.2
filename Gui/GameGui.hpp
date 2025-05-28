@@ -7,16 +7,16 @@
 #include <random>
 #include "../Game.hpp"
 
-enum class GameAction {
-    GATHER,
-    TAX, 
-    BRIBE,
-    ARREST,
-    SANCTION,
-    COUP,
-    INVEST,
-    REVEAL,     
-};
+// enum class GameAction {
+//     GATHER,
+//     TAX, 
+//     BRIBE,
+//     ARREST,
+//     SANCTION,
+//     COUP,
+//     INVEST,
+//     REVEAL,     
+// };
 
 struct PlayerGui {
 

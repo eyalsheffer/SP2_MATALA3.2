@@ -19,11 +19,13 @@ class Game{
         std::vector<Player*>& get_players();
         int get_turn();
         void set_turn(const int turn);
+
+        void set_isBribe(const bool isBribe);
         std::string winner();
-        bool is_current(const Player& p) const;
-        void check_valid_move(const Player& p) const;
+        bool is_current( Player& p) const;
+        void check_valid_move( Player& p) const;
         void turn_manager();
-        bool can_take_action(const Player& p) const
+        bool can_take_action( Player& p) const;
         //void add_player(Player* p);
         //void make_action();
 

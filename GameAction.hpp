@@ -1,5 +1,5 @@
-#ifndef GAMEACTION.HPP
-#define GAMEACTION.HPP
+#ifndef GAMEACTION_HPP
+#define GAMEACTION_HPP
 
 enum class GameAction{
     NONE,
@@ -9,7 +9,7 @@ enum class GameAction{
     ARREST,
     SANCTION,
     COUP,
-    Uniqe,
+    UNIQE,
     // INVEST,
     // REVEAL, 
 };

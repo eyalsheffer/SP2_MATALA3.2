@@ -3,10 +3,12 @@
 
 #include <iostream>
 #include "../GameAction.hpp"
+//#include "../Game.hpp"
+class Game;
 
 class Player{
     protected:
-    Game& game;
+    Game& _game;
     std::string _name;
     //std::string role;
     int _coins;
@@ -18,11 +20,11 @@ class Player{
     //Player* _last_arrested;
 
     public:
-    Player(std::string name);
-    Player(Player& other);
-    virtual ~Player();
+    Player(Game& game,const std::string& name);
+    Player(Player& other) = delete;
+    virtual ~Player() = default;
 
-    Player& operator=(Player& other);
+    Player& operator=(const Player& other) = delete;
 
     std::string get_name();
     int get_coins();
