@@ -796,13 +796,14 @@ bool GameGui::hasGeneralToBlock() {
 }
 bool GameGui::hasGovernorToBlock() {
     std::vector<Player*>& players = game->get_players();
+    int temp_turn = (game->get_turn() - 1) % static_cast<int>(players.size());
     eligibleBlockers.clear();
     
     for (int i = 0; i < static_cast<int>(players.size()); i++) {
         Player* p = players[i];
-        if (p->get_name() != players[game->get_turn()]->get_name() && 
+        if (p->get_name() != players[temp_turn]->get_name() && 
             dynamic_cast<Governor*>(p) && 
-            p->get_isActive()) {
+            p->get_isActive()) { 
             eligibleBlockers.push_back(i);
         }
     }
@@ -968,32 +969,32 @@ void GameGui::showCurrentBlockerOption() {
 
 void GameGui::handleBlock() {
     std::vector<Player*> players = game->get_players();
-    //Player* currentPlayer = players[game->get_turn()];
     Player* blocker = players[eligibleBlockers[currentBlockerIndex]];
-    //bool actionBlocked = true;
-
+    Player* currentPlayer = players[game->get_turn()]; // You'll need this for the target
     std::string blockMessage;
     
     try {
-        // Call blocker's uniqe() method to undo the action
-        blocker->uniqe(*players[game->get_turn()]);
+        // Call blocker's uniqe() method based on their type
+        // Check if blocker is Baron (who doesn't need a target)
+        if (dynamic_cast<Baron*>(blocker)) {
+            blocker->uniqe(); // Baron invests, no target needed
+        } else {
+            blocker->uniqe(*currentPlayer); // Other players block the current player
+        }
         
         switch (lastAction) {
             case GameAction::TAX:
                 blockMessage = currentBlockerName + " (Governor) blocked Tax!";
                 break;
-                
             case GameAction::BRIBE:
                 blockMessage = currentBlockerName + " (Judge) blocked Bribe!";
                 break;
-                
             case GameAction::COUP:
                 blockMessage = currentBlockerName + " (General) blocked Coup!";
                 break;
-                
             default:
                 blockMessage = currentBlockerName + " blocked the action!";
-                break;    
+                break;
         }
         
         updateInfoPanel(blockMessage);
@@ -1006,7 +1007,7 @@ void GameGui::handleBlock() {
         eligibleBlockers.clear();
         phaseText.setString("Phase: Action Selection");
         instructionText.setString("Choose an action:");
-        //nextPlayer();
+        
         updatePlayerDisplay();
         updateActionButtonVisibility();
         
@@ -1014,12 +1015,12 @@ void GameGui::handleBlock() {
         // Block failed due to runtime exception
         blockMessage = currentBlockerName + " failed to block - " + std::string(e.what());
         updateInfoPanel(blockMessage);
-        //actionBlocked = false;
         
         // Continue to next blocker or execute action
         currentBlockerIndex++;
         showCurrentBlockerOption();
     }
+
 }
 
 void GameGui::handleAllow() {
@@ -1180,6 +1181,7 @@ void GameGui::executeAction(GameAction action) {
                 if (hasGovernorToBlock()) {
                     waitingForBlock = true;
                     lastAction = action;
+                    gamePhase = 2;
                     pendingAction = action;
                     updateInfoPanel(currentPlayer->get_name() + " used " + actionName + " - Governors can block!");
                     startBlockingSequence();

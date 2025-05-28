@@ -166,12 +166,13 @@
         _coins-=7;
         other._is_active = false;
           // Check for a winner after the coup
-    try {
-        std::string win = _game.winner();
-        std::cout << "Game over! Winner: " << win << std::endl;
-        return;  
-    } catch (const std::runtime_error& e) {
-        // No winner yet — continue game
-    }
-        _game.turn_manager();
+        _last_action = GameAction::COUP;
+        try {
+            std::string win = _game.winner();
+            std::cout << "Game over! Winner: " << win << std::endl;
+            return;  
+        } catch (const std::runtime_error& e) {
+            // No winner yet — continue game
+        }
+            _game.turn_manager();
     }
