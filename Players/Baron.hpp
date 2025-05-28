@@ -9,7 +9,7 @@ class Baron : public Player{
 
     public:
     Baron (const std::string& name):Player(name){};
-    void invest() ;
+    void uniqe() override;
 
 };
 #endif

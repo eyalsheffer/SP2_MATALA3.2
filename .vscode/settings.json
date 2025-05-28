@@ -47,6 +47,8 @@
         "cstring": "cpp",
         "ctime": "cpp",
         "map": "cpp",
-        "cinttypes": "cpp"
-    }
+        "cinttypes": "cpp",
+        "sstream": "cpp"
+    },
+    "C_Cpp.errorSquiggles": "disabled"
 }

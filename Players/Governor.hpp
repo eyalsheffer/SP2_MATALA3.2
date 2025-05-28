@@ -8,8 +8,8 @@ class Governor : public Player{
     private:
 
     public:
-    Governor (const std::string& name):Player(name){};
-    void tax() override;
+    Governor (const std::string& name):Player(name){}
+    void uniqe(Player& other) override;
 
 };
 #endif

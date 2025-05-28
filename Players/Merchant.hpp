@@ -8,6 +8,7 @@ class Merchant : public Player{
     private:
 
     public:
-        Merchant (const std::string& name):Player(name){};
+    Merchant (const std::string& name):Player(name){};
+    void uniqe() override;
 };
 #endif

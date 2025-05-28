@@ -19,6 +19,7 @@
         _is_active = other._is_active;
         _can_arrest = other._can_arrest;
         _last_arrested = other._last_arrested;
+        _last_action = other._last_action;
         std::cout << "Player '" << _name << "' created" << std::endl;
     }
     Player::~Player(){
@@ -33,7 +34,7 @@
             _is_active = other._is_active;
             _can_arrest = other._can_arrest;
             _last_arrested = other._last_arrested;
-            
+            _last_action = other._last_action;
         }
         return *this;
     }
@@ -56,6 +57,10 @@
     bool Player::get_lastArrested(){
         return _last_arrested;
     }
+    GameAction Player::get_lastAction(){
+        return _last_action;
+    }
+
 
     void Player::set_name(const std::string& name){
         _name = name;
@@ -75,6 +80,10 @@
     void Player::set_lastArrested(const bool lastArrest){
         _last_arrested = lastArrest;
     }
+    void Player::set_lastAction(GameAction act){
+        _last_action = act;
+    }
+
 
     void Player::gather(){
         if(!_is_sanction){
