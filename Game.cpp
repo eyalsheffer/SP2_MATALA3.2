@@ -14,12 +14,23 @@ Game& Game::instance(){
     static Game instance;
     return instance;
 }
-
+  void Game::clear_players() {
+        for (Player* p : _players) {
+            delete p;
+        }
+        _players.clear();
+        _turn = 0;
+        _is_bribe = false;
+    }
 std::vector<Player*>& Game::get_players(){
     return _players;
 }
 int Game::get_turn(){
+   
     return _turn;
+}
+bool Game::get_isBribe() const {
+    return _is_bribe;
 }
 void Game::set_turn(const int turn){
      _turn  = turn;

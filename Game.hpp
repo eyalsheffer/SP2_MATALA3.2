@@ -15,10 +15,12 @@ class Game{
         Game& operator=(const Game&) = delete;
     public:
         static Game& instance();
-
+          void clear_players();
         std::vector<Player*>& get_players();
         int get_turn();
         void set_turn(const int turn);
+         bool get_isBribe() const;
+
 
         void set_isBribe(const bool isBribe);
         std::string winner();

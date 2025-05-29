@@ -1,57 +1,49 @@
 CXX = g++
 CXXFLAGS = -std=c++17 -Wall -Wextra -Werror -pedantic
-SFML_CFLAGS = `pkg-config --cflags sfml-graphics`
-SFML_LIBS = `pkg-config --libs sfml-graphics`
+
+SFML_CFLAGS = $(shell pkg-config --cflags sfml-graphics)
+SFML_LIBS = $(shell pkg-config --libs sfml-graphics)
+
 SRCDIR_PLAYERS = Players
 SRCDIR_GUI = Gui
-OBJ_PLAYERS = Players/Baron.o Players/General.o Players/Governor.o Players/Judge.o Players/Merchant.o Players/Player.o Players/Spy.o
-OBJ_GUI = Gui/MainGui.o Gui/GameGui.o
-OBJ = $(OBJ_PLAYERS) Game.o main.o test.o $(OBJ_GUI)
+SRC_PLAYERS = $(wildcard $(SRCDIR_PLAYERS)/*.cpp)
+SRC_GUI = $(wildcard $(SRCDIR_GUI)/*.cpp)
 
-Main: $(OBJ_PLAYERS) Game.o main.o $(OBJ_GUI)
-	$(CXX) $(CXXFLAGS) -o Main $(OBJ_PLAYERS) Game.o main.o $(OBJ_GUI) $(SFML_LIBS)
+OBJ_PLAYERS = $(SRC_PLAYERS:.cpp=.o)
+OBJ_GUI = $(SRC_GUI:.cpp=.o)
+OBJ_COMMON = Game.o
+OBJ_MAIN = main.o
+OBJ_TEST = Test/test.o
 
-test: $(OBJ_PLAYERS) Game.o test.o
-	$(CXX) $(CXXFLAGS) -o test $(OBJ_PLAYERS) Game.o test.o $(SFML_LIBS)
+TARGET_MAIN = Main
+TARGET_TEST = test
 
-valgrind: Main
-	valgrind --leak-check=full ./Main
+all: $(TARGET_MAIN)
 
-Players/Baron.o: Players/Baron.cpp Players/Baron.hpp
-	$(CXX) $(CXXFLAGS) -c Players/Baron.cpp -o Players/Baron.o
+$(TARGET_MAIN): $(OBJ_PLAYERS) $(OBJ_COMMON) $(OBJ_MAIN) $(OBJ_GUI)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(SFML_LIBS)
 
-Players/General.o: Players/General.cpp Players/General.hpp
-	$(CXX) $(CXXFLAGS) -c Players/General.cpp -o Players/General.o
+$(TARGET_TEST): $(OBJ_PLAYERS) $(OBJ_COMMON) $(OBJ_TEST)
+	$(CXX) $(CXXFLAGS) -o $@ $^
 
-Players/Governor.o: Players/Governor.cpp Players/Governor.hpp
-	$(CXX) $(CXXFLAGS) -c Players/Governor.cpp -o Players/Governor.o
+# Pattern rule for object files in Players and Gui
+%.o: %.cpp %.hpp
+	$(CXX) $(CXXFLAGS) $(SFML_CFLAGS) -c $< -o $@
 
-Players/Judge.o: Players/Judge.cpp Players/Judge.hpp
-	$(CXX) $(CXXFLAGS) -c Players/Judge.cpp -o Players/Judge.o
-
-Players/Merchant.o: Players/Merchant.cpp Players/Merchant.hpp
-	$(CXX) $(CXXFLAGS) -c Players/Merchant.cpp -o Players/Merchant.o
-
-Players/Player.o: Players/Player.cpp Players/Player.hpp
-	$(CXX) $(CXXFLAGS) -c Players/Player.cpp -o Players/Player.o
-
-Players/Spy.o: Players/Spy.cpp Players/Spy.hpp
-	$(CXX) $(CXXFLAGS) -c Players/Spy.cpp -o Players/Spy.o
-
+# For Game, main, and test (no .hpp dependencies assumed)
 Game.o: Game.cpp Game.hpp
-	$(CXX) $(CXXFLAGS) -c Game.cpp -o Game.o
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 main.o: main.cpp
-	$(CXX) $(CXXFLAGS) $(SFML_CFLAGS) -c main.cpp -o main.o
+	$(CXX) $(CXXFLAGS) $(SFML_CFLAGS) -c $< -o $@
 
-test.o: test.cpp
-	$(CXX) $(CXXFLAGS) $(SFML_CFLAGS) -c test.cpp -o test.o
+test.o: Test/test.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-Gui/MainGui.o: Gui/MainGui.cpp Gui/MainGui.hpp
-	$(CXX) $(CXXFLAGS) $(SFML_CFLAGS) -c Gui/MainGui.cpp -o Gui/MainGui.o
-
-Gui/GameGui.o: Gui/GameGui.cpp Gui/GameGui.hpp
-	$(CXX) $(CXXFLAGS) $(SFML_CFLAGS) -c Gui/GameGui.cpp -o Gui/GameGui.o
+valgrind: $(TARGET_MAIN)
+	valgrind --leak-check=full ./$(TARGET_MAIN)
 
 clean:
-	rm -f Players/*.o Gui/*.o *.o Main test
+	rm -f $(OBJ_PLAYERS) $(OBJ_GUI) $(OBJ_COMMON) $(OBJ_MAIN) $(OBJ_TEST) $(TARGET_MAIN) $(TARGET_TEST)
+	find . -name '*.o' -delete
+.PHONY: all clean valgrind
