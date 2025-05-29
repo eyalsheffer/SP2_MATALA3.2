@@ -310,7 +310,7 @@ void GameGui::initializeActionButtons() {
         GameAction::UNIQE,
     };
     
-    std::vector<std::string> actionNames = {///////////////////////////////////////
+    std::vector<std::string> actionNames = {
 
         "Gather (+1)",
         "Tax (+2)",
@@ -868,39 +868,7 @@ bool GameGui::hasJudgeToBlock() {
     return !eligibleBlockers.empty();
 }
 
-// bool GameGui::canPlayerTakeAction() {
-//     Player* currentPlayer = game->get_players()[game->get_turn()];
-    
-    
-//     // Check if player has any available actions
-//     bool hasAvailableAction = false;
-    
-//     // Can always gather if not sanctioned
-//     if (!currentPlayer->get_isSanction()) {
-//         hasAvailableAction = true;
-//     }
-    
-//     // Check other actions
-//     if (currentPlayer->get_coins() >= 3) hasAvailableAction = true; // Sanction
-//     if (currentPlayer->get_canArrest()) {
-//         // Check if there are valid arrest targets
-//         std::vector<Player*>& players = game->get_players();
-//         for (int i = 0; i < numPlayers; i++) {
-//             if (i != game->get_turn() && players[i]->get_isActive() && !players[i]->get_lastArrested()) {
-//                 // Check if target can be arrested (has money or is not Merchant with <2 coins)
-//                 if (players[i]->get_coins() > 0 || 
-//                     (dynamic_cast<Merchant*>(players[i]) && players[i]->get_coins() >= 2)) {
-//                     hasAvailableAction = true;
-//                     break;
-//                 }
-//             }
-//         }
-//     }
-//     if (dynamic_cast<Baron*>(currentPlayer) && currentPlayer->get_coins() >= 3) hasAvailableAction = true; // Invest
-    
-    
-//     return hasAvailableAction;
-// }
+
 
 bool GameGui::isValidArrestTarget(Player* target) {
     // Cannot arrest if target was arrested last turn

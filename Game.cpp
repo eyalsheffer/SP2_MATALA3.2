@@ -14,14 +14,17 @@ Game& Game::instance(){
     static Game instance;
     return instance;
 }
-  void Game::clear_players() {
-        for (Player* p : _players) {
-            delete p;
-        }
-        _players.clear();
-        _turn = 0;
-        _is_bribe = false;
+/**
+ * @brief Deletes all players, clears the player list, resets turn and bribe state.
+ */
+void Game::clear_players() {
+    for (Player* p : _players) {
+        delete p;
     }
+    _players.clear();
+    _turn = 0;
+    _is_bribe = false;
+}
 std::vector<Player*>& Game::get_players(){
     return _players;
 }
@@ -38,6 +41,11 @@ void Game::set_turn(const int turn){
 void Game::set_isBribe(const bool isBribe){
      _is_bribe  = isBribe;
 }
+/**
+ * @brief Returns the name of the single active player (the winner).
+ * @return Winner's name.
+ * @throws std::runtime_error if no single winner yet.
+ */
 std::string Game::winner(){
     std::string won;
     int count  = 0;
@@ -60,7 +68,11 @@ bool Game::is_current( Player& p) const{
     return _players[_turn]->get_name() ==  p.get_name();
     
 }
-
+/**
+ * @brief Validates if a player can make a move; checks active status, turn order, and forced coup.
+ * @param p Player to validate.
+ * @throws std::runtime_error if invalid.
+ */
 void Game::check_valid_move( Player& p) const{
     if(!p.get_isActive()){
         throw std::runtime_error("players not active");
@@ -73,6 +85,11 @@ void Game::check_valid_move( Player& p) const{
     }
 
 }  
+/**
+ * @brief Checks if the player can arrest any other active players with coins.
+ * @param p Player checking arrest options.
+ * @return true if arrest options exist, false otherwise.
+ */
 bool Game::have_arrests_options(Player& p) const{
     if (!p.get_canArrest()) {
         return false;
@@ -88,7 +105,11 @@ bool Game::have_arrests_options(Player& p) const{
     }
     return false;
 }
-
+/**
+ * @brief Determines if a player can take an action based on sanction status and coins.
+ * @param p Player to check.
+ * @return true if action allowed, false otherwise.
+ */
 bool Game::can_take_action(Player& p) const{
     if(!p.get_isSanction()){
         return true;
@@ -101,6 +122,10 @@ bool Game::can_take_action(Player& p) const{
     }
     return this->have_arrests_options(p);
 }
+/**
+ * @brief Advances to the next active player’s turn, handles sanctions, arrests, bribes, and Merchant bonus.
+ * @throws std::runtime_error if no players.
+ */
 void Game::turn_manager(){
     if(_players.empty()){
         throw std::runtime_error("No players");

@@ -2,7 +2,10 @@
 #include "stdexcept"
 
 
-
+/**
+ * @brief Baron unique ability: adds 3 coins if player is active and has 3-9 coins.
+ * @throws std::runtime_error if player is inactive, has fewer than 3 coins, or has 10+ coins (must coup).
+ */
 void Baron::uniqe(){
     if(!_is_active){
         throw std::runtime_error("Player is not active!");
