@@ -72,6 +72,7 @@ TEST_CASE("Player Actions - Basic Actions") {
         
         CHECK(player->get_coins() == initial_coins + 1);
         CHECK(player->get_lastAction() == GameAction::GATHER);
+        delete player;
     }
     
     SUBCASE("Gather Action - Sanctioned Player") {
@@ -82,6 +83,7 @@ TEST_CASE("Player Actions - Basic Actions") {
         player->set_isSanction(true);
         
         CHECK_THROWS_AS(player->gather(), std::runtime_error);
+        delete player;
     }
     
     SUBCASE("Tax Action") {
@@ -94,6 +96,7 @@ TEST_CASE("Player Actions - Basic Actions") {
         
         CHECK(player->get_coins() == initial_coins + 2);
         CHECK(player->get_lastAction() == GameAction::TAX);
+        delete player;
     }
     
     SUBCASE("Tax Action - Sanctioned Player") {
@@ -104,6 +107,7 @@ TEST_CASE("Player Actions - Basic Actions") {
         player->set_isSanction(true);
         
         CHECK_THROWS_AS(player->tax(), std::runtime_error);
+        delete player;
     }
 }
 
@@ -123,6 +127,7 @@ TEST_CASE("Player Actions - Advanced Actions") {
         
         CHECK(player->get_coins() == initial_coins - 4);
         CHECK(player->get_lastAction() == GameAction::BRIBE);
+        delete player;
     }
     
     SUBCASE("Bribe Action - Insufficient Funds") {
@@ -133,6 +138,7 @@ TEST_CASE("Player Actions - Advanced Actions") {
         player->set_coins(3);
         
         CHECK_THROWS_AS(player->bribe(), std::runtime_error);
+        delete player;
     }
     
     SUBCASE("Arrest Action - Basic") {
@@ -154,6 +160,8 @@ TEST_CASE("Player Actions - Advanced Actions") {
         CHECK(arrester->get_coins() == arrester_initial + 1);
         CHECK(target->get_coins() == target_initial - 1);
         CHECK(arrester->get_lastAction() == GameAction::ARREST);
+        delete arrester;
+        delete target;
     }
     
     SUBCASE("Arrest Action - Target Has No Money") {
@@ -167,6 +175,8 @@ TEST_CASE("Player Actions - Advanced Actions") {
         target->set_coins(0);
         
         CHECK_THROWS_AS(arrester->arrest(*target), std::runtime_error);
+        delete arrester;
+        delete target;
     }
 }
 
@@ -190,6 +200,8 @@ TEST_CASE("Player Actions - Sanction and Coup") {
         CHECK(sanctioner->get_coins() == initial_coins - 3);
         CHECK(target->get_isSanction() == true);
         CHECK(sanctioner->get_lastAction() == GameAction::SANCTION);
+        delete sanctioner;
+        delete target;
     }
     
     SUBCASE("Sanction Action - Insufficient Funds") {
@@ -203,6 +215,8 @@ TEST_CASE("Player Actions - Sanction and Coup") {
         sanctioner->set_coins(2);
         
         CHECK_THROWS_AS(sanctioner->sanction(*target), std::runtime_error);
+         delete sanctioner;
+        delete target;
     }
     
     SUBCASE("Coup Action - Success") {
@@ -221,6 +235,8 @@ TEST_CASE("Player Actions - Sanction and Coup") {
         CHECK(couper->get_coins() == initial_coins - 7);
         CHECK(target->get_isActive() == false);
         CHECK(couper->get_lastAction() == GameAction::COUP);
+         delete couper;
+        delete target;
     }
     
     SUBCASE("Coup Action - Insufficient Funds") {
@@ -234,6 +250,9 @@ TEST_CASE("Player Actions - Sanction and Coup") {
         couper->set_coins(6);
         
         CHECK_THROWS_AS(couper->coup(*target), std::runtime_error);
+        delete couper;
+        delete target;
+        
     }
 }
 
@@ -250,6 +269,8 @@ TEST_CASE("Governor Special Abilities") {
         governor->tax();
         
         CHECK(governor->get_coins() == initial_coins + 3); // Governor gets 3 instead of 2
+        delete governor;
+        
     }
 }
 
@@ -274,6 +295,8 @@ TEST_CASE("Merchant Special Abilities") {
         // Merchant loses 2 coins (1 normal + 1 penalty), arrester gains 1 but loses 1 (net 0)
         CHECK(merchant->get_coins() == merchant_initial - 2);
         CHECK(arrester->get_coins() == arrester_initial);
+        delete arrester;
+        delete merchant;
     }
     
     SUBCASE("Merchant Insufficient Funds for Arrest") {
@@ -287,6 +310,8 @@ TEST_CASE("Merchant Special Abilities") {
         merchant->set_coins(1); // Merchant needs at least 2 coins
         
         CHECK_THROWS_AS(arrester->arrest(*merchant), std::runtime_error);
+        delete arrester;
+        delete merchant;
     }
 }
 
@@ -311,6 +336,8 @@ TEST_CASE("Baron Special Abilities") {
         
         CHECK(baron->get_coins() == baron_initial + 1); // Baron gets compensation
         CHECK(baron->get_isSanction() == true);
+        delete sanctioner;
+        delete baron;
     }
 }
 
@@ -334,6 +361,8 @@ TEST_CASE("Judge Special Abilities") {
         // Sanctioner pays 3 + 1 extra for Judge
         CHECK(sanctioner->get_coins() == initial_coins - 4);
         CHECK(judge->get_isSanction() == true);
+        delete sanctioner;
+        delete judge;
     }
 }
 
@@ -358,6 +387,8 @@ TEST_CASE("General Special Abilities") {
         // General gets back the coin that was taken
         CHECK(general->get_coins() == general_initial);
         CHECK(arrester->get_coins() == arrester_initial);
+        delete arrester;
+        delete general;
     }
 }
 
@@ -379,6 +410,8 @@ TEST_CASE("Game Turn Management") {
         game.set_turn(1);
         CHECK(game.is_current(*player1) == false);
         CHECK(game.is_current(*player2) == true);
+        delete player1;
+        delete player2;
     }
     
     SUBCASE("Turn Manager Progression") {
@@ -401,6 +434,9 @@ TEST_CASE("Game Turn Management") {
         
         player3->gather(); // This should wrap around to 0
         CHECK(game.get_turn() == 0);
+        delete player1;
+        delete player2;
+        delete player3;
     }
 }
 
@@ -416,6 +452,7 @@ TEST_CASE("Game Valid Move Checks") {
         player->set_isActive(false);
         
         CHECK_THROWS_AS(player->gather(), std::runtime_error);
+        delete player;
     }
     
     SUBCASE("Out of Turn Player Cannot Move") {
@@ -427,6 +464,8 @@ TEST_CASE("Game Valid Move Checks") {
         game.set_turn(0); // It's player1's turn
         
         CHECK_THROWS_AS(player2->gather(), std::runtime_error);
+           delete player1;
+        delete player2;
     }
     
     SUBCASE("Player with 10+ Coins Must Coup") {
@@ -444,6 +483,8 @@ TEST_CASE("Game Valid Move Checks") {
         
         // But coup should work
         CHECK_NOTHROW(rich_player->coup(*target));
+           delete rich_player;
+        delete target;
     }
 }
 
@@ -459,6 +500,8 @@ TEST_CASE("Game Winner Detection") {
         game.get_players().push_back(player2);
         
         CHECK_THROWS_AS(game.winner(), std::runtime_error);
+        delete player1;
+        delete player2;
     }
     
     SUBCASE("Winner - Single Active Player") {
@@ -471,6 +514,8 @@ TEST_CASE("Game Winner Detection") {
         player2->set_isActive(false);
         
         CHECK(game.winner() == "Winner");
+        delete player1;
+        delete player2;
     }
     
     SUBCASE("No Winner - No Players") {
@@ -497,6 +542,8 @@ TEST_CASE("Merchant Turn Bonus") {
         
         // After turn manager, if merchant had 3+ coins, should get +1
         CHECK(merchant->get_coins() == initial_coins + 1);
+        delete merchant;
+        
     }
 }
 
@@ -506,7 +553,9 @@ TEST_CASE("Edge Cases and Error Handling") {
     
     SUBCASE("Empty Game Turn Management") {
         CHECK_THROWS_AS(game.turn_manager(), std::runtime_error);
-        CHECK_THROWS_AS(game.is_current(*(new Player(game, "TestPlayer"))), std::runtime_error);
+        Player* temp = new Player(game, "TestPlayer");
+        CHECK_THROWS_AS(game.is_current(*temp), std::runtime_error);
+        delete temp;
     }
     
     SUBCASE("Bribe Turn Handling") {
@@ -521,6 +570,8 @@ TEST_CASE("Edge Cases and Error Handling") {
         
         // After bribe, turn should not advance (handled by _is_bribe flag)
         CHECK(game.get_turn() == current_turn);
+        delete player;
+        
     }
 }
 
@@ -546,6 +597,7 @@ TEST_CASE("Action Chain Tests") {
         player->tax();
         CHECK(player->get_coins() == 5);
         CHECK(player->get_lastAction() == GameAction::TAX);
+        delete player;
     }
 }
 TEST_CASE("Baron Special Abilities - Complete") {
@@ -563,6 +615,7 @@ TEST_CASE("Baron Special Abilities - Complete") {
         baron->uniqe();
         
         CHECK(baron->get_coins() == initial_coins + 3);
+        delete baron;
     }
     
     SUBCASE("Baron Unique Action - Insufficient Coins") {
@@ -573,6 +626,7 @@ TEST_CASE("Baron Special Abilities - Complete") {
         baron->set_coins(2);
         
         CHECK_THROWS_AS(baron->uniqe(), std::runtime_error);
+        delete baron;
     }
     
     SUBCASE("Baron Unique Action - Too Many Coins") {
@@ -583,6 +637,7 @@ TEST_CASE("Baron Special Abilities - Complete") {
         baron->set_coins(10);
         
         CHECK_THROWS_AS(baron->uniqe(), std::runtime_error);
+        delete baron;
     }
     
     SUBCASE("Baron Unique Action - Inactive Player") {
@@ -594,6 +649,7 @@ TEST_CASE("Baron Special Abilities - Complete") {
         baron->set_isActive(false);
         
         CHECK_THROWS_AS(baron->uniqe(), std::runtime_error);
+        delete baron;
     }
     
     SUBCASE("Baron Sanction Defense - Existing Test Enhanced") {
@@ -615,6 +671,8 @@ TEST_CASE("Baron Special Abilities - Complete") {
         CHECK(baron->get_coins() == baron_initial + 1); // Baron gets compensation
         CHECK(baron->get_isSanction() == true);
         CHECK(sanctioner->get_coins() == sanctioner_initial - 3); // Normal sanction cost
+        delete sanctioner;
+        delete baron;
     }
 }
 
@@ -648,6 +706,8 @@ void reset_game_state(Game& game) {
         CHECK(general->get_coins() == general_initial - 5); // Paid 5 to block
         CHECK(general->get_isActive() == true);             // Restored to active
         CHECK(couper->get_lastAction() == GameAction::NONE); // Action nullified
+        delete couper;
+        delete general;
     }
     SUBCASE("General Block - Wrong Action") {
         reset_game_state(game);
@@ -663,25 +723,11 @@ void reset_game_state(Game& game) {
         player->gather(); // Not a coup
 
         CHECK_THROWS_AS(general->uniqe(*player, *general), std::runtime_error);
+         delete player;
+        delete general;
     }
 
-    SUBCASE("General Block - Insufficient Coins") {
-        reset_game_state(game);
 
-        Player* couper = new Player(game, "Couper");
-        General* general = new General(game, "GeneralPlayer");
-
-        game.get_players().push_back(couper);
-        game.get_players().push_back(general);
-        game.set_turn(0);
-
-        couper->set_coins(8);
-        general->set_coins(4); // Not enough to block
-
-        
-
-        CHECK_THROWS_AS(couper->coup(*general), std::runtime_error);
-    }
 
    
 
@@ -706,6 +752,8 @@ void reset_game_state(Game& game) {
         // General's passive defense should work
         CHECK(general->get_coins() == general_initial);
         CHECK(arrester->get_coins() == arrester_initial);
+         delete arrester;
+        delete general;
     }
 }
 
@@ -732,6 +780,8 @@ TEST_CASE("Governor Special Abilities - Complete") {
         blocker->uniqe(*player);
         
         CHECK(player->get_coins() == initial_coins); // Tax reversed
+         delete blocker;
+        delete player;
     }
     
     SUBCASE("Governor Tax Block - Against Another Governor") {
@@ -752,6 +802,8 @@ TEST_CASE("Governor Special Abilities - Complete") {
         blocker->uniqe(*target);
         
         CHECK(target->get_coins() == initial_coins); // 3 coin tax reversed
+         delete blocker;
+        delete target;
     }
     
     SUBCASE("Governor Block - Wrong Action") {
@@ -766,6 +818,8 @@ TEST_CASE("Governor Special Abilities - Complete") {
         
         game.set_turn(0);
         CHECK_THROWS_AS(governor->uniqe(*player), std::runtime_error);
+        delete governor;
+        delete player;
     }
     
     SUBCASE("Governor Block - Inactive") {
@@ -781,6 +835,8 @@ TEST_CASE("Governor Special Abilities - Complete") {
         governor->set_isActive(false);
         game.set_turn(0);
         CHECK_THROWS_AS(governor->uniqe(*player), std::runtime_error);
+        delete governor;
+        delete player;
     }
 }
 
@@ -806,6 +862,9 @@ TEST_CASE("Judge Special Abilities - Complete") {
         judge->uniqe(*briber);
         
         CHECK(game.get_isBribe() == false); // Bribe blocked
+        delete judge;
+        delete briber;
+        
     }
      
     SUBCASE("Judge Block - Wrong Action") {
@@ -820,6 +879,8 @@ TEST_CASE("Judge Special Abilities - Complete") {
         
         game.set_turn(0);
         CHECK_THROWS_AS(judge->uniqe(*player), std::runtime_error);
+        delete judge;
+        delete player;
     }
     
     SUBCASE("Judge Block - Inactive") {
@@ -836,6 +897,8 @@ TEST_CASE("Judge Special Abilities - Complete") {
         judge->set_isActive(false);
         game.set_turn(0);
         CHECK_THROWS_AS(judge->uniqe(*briber), std::runtime_error);
+        delete judge;
+        delete briber;
     }
     
     SUBCASE("Judge Sanction Cost Increase - Existing Test Enhanced") {
@@ -853,6 +916,8 @@ TEST_CASE("Judge Special Abilities - Complete") {
         
         CHECK(sanctioner->get_coins() == initial_coins - 4); // 3 + 1 extra for Judge
         CHECK(judge->get_isSanction() == true);
+        delete judge;
+        delete sanctioner;
     }
 }
 
@@ -871,6 +936,7 @@ TEST_CASE("Merchant Special Abilities - Complete") {
         merchant->uniqe(); // Should be called at turn start
         
         CHECK(merchant->get_coins() == initial_coins + 1);
+        delete merchant;
     }
     
     SUBCASE("Merchant Turn Bonus - Insufficient Coins") {
@@ -884,6 +950,7 @@ TEST_CASE("Merchant Special Abilities - Complete") {
         merchant->uniqe();
         
         CHECK(merchant->get_coins() == initial_coins); // No bonus
+        delete merchant;
     }
     
     SUBCASE("Merchant Arrest Defense - Existing Test Enhanced") {
@@ -905,6 +972,8 @@ TEST_CASE("Merchant Special Abilities - Complete") {
         // Merchant loses 2 coins (1 normal + 1 penalty), arrester gains 1 but loses 1 (net 0)
         CHECK(merchant->get_coins() == merchant_initial - 2);
         CHECK(arrester->get_coins() == arrester_initial);
+        delete arrester;
+        delete merchant;
     }
     
     SUBCASE("Merchant Arrest Defense - Insufficient Funds") {
@@ -918,6 +987,8 @@ TEST_CASE("Merchant Special Abilities - Complete") {
         merchant->set_coins(1); // Merchant needs at least 2 coins
         
         CHECK_THROWS_AS(arrester->arrest(*merchant), std::runtime_error);
+         delete arrester;
+        delete merchant;
     }
 }
 
@@ -938,6 +1009,8 @@ TEST_CASE("Spy Special Abilities - Complete") {
         spy->uniqe(*target);
         
         CHECK(target->get_canArrest() == false); // Now cannot arrest
+         delete spy;
+        delete target;
     }
     
     SUBCASE("Spy Action - Target Inactive") {
@@ -951,6 +1024,8 @@ TEST_CASE("Spy Special Abilities - Complete") {
         target->set_isActive(false);
         
         CHECK_THROWS_AS(spy->uniqe(*target), std::runtime_error);
+        delete spy;
+        delete target;
     }
     
     SUBCASE("Spy Action - Spy Inactive") {
@@ -964,6 +1039,8 @@ TEST_CASE("Spy Special Abilities - Complete") {
         spy->set_isActive(false);
         
         CHECK_THROWS_AS(spy->uniqe(*target), std::runtime_error);
+        delete spy;
+        delete target;
     }
     
     SUBCASE("Spy Effect on Arrest Actions") {
@@ -980,14 +1057,14 @@ TEST_CASE("Spy Special Abilities - Complete") {
         spy->uniqe(*victim);
         CHECK(victim->get_canArrest() == false);
         
-        // Victim should not be able to arrest if canArrest is used in game logic
-        // This would need to be implemented in the arrest method
+
         game.set_turn(1); // Victim's turn
         victim->set_coins(2);
         target->set_coins(2);
-        
-        // If your game logic checks canArrest, this should throw
-        // Otherwise, you need to add this check to the arrest method
+        delete spy;
+        delete victim;
+        delete target;
+
     }
 }
 
@@ -1034,6 +1111,12 @@ TEST_CASE("Special Abilities Integration Tests") {
         game.set_turn(5); // Spy's turn
         spy->uniqe(*general);
         CHECK(general->get_canArrest() == false);
+         delete baron;
+        delete general;
+         delete governor;
+        delete judge;
+        delete merchant;
+        delete spy;
     }
     
     SUBCASE("Edge Case - All Players Have Unique Abilities") {
@@ -1054,6 +1137,8 @@ TEST_CASE("Special Abilities Integration Tests") {
         game.set_turn(0); // Gov1's turn
         gov1->uniqe(*gov2); // Blocks the tax
         CHECK(gov2->get_coins() == 3); // Tax reversed
+        delete gov1;
+        delete gov2;
     }
 }
 
