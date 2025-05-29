@@ -45,7 +45,9 @@ private:
     int blockingPlayer;
     GameAction lastAction;
     int lastActionTarget;
+    int lastPlayer;
     std::vector<std::string> roleNames;
+    Player* coupTarget;
     //bool isBribe;
     
     std::vector<int> eligibleBlockers;      // Indices of players who can block
@@ -124,6 +126,7 @@ private:
     bool hasGovernorToBlock();
     bool hasJudgeToBlock();
     //bool canPlayerTakeAction();
+    //int getActualCurrentIndex();
     bool isValidArrestTarget(Player* target);
     bool isValidSanctionTarget( Player* target);
     void startBlockingSequence();

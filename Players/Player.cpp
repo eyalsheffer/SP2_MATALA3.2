@@ -3,6 +3,7 @@
 #include "Judge.hpp"
 #include "Merchant.hpp"
 #include "Baron.hpp"
+#include "Governor.hpp"
 #include "../Game.hpp"
 #include <iostream>
 #include <stdexcept>
@@ -103,7 +104,13 @@
          if(_is_sanction){
             throw std::runtime_error("Player is sanctioned");
         }
-        _coins+= 2;
+        if(dynamic_cast<Governor*>(this)){
+            _coins+= 3;
+        }
+        else{
+            _coins+= 2;
+        }
+
         _last_action = GameAction::TAX;
         _game.turn_manager();
     }
@@ -159,14 +166,19 @@
         _game.turn_manager();
     }
     void Player::coup(Player& other){
+        _last_action = GameAction::COUP;
         _game.check_valid_move(*this);
         if(_coins <= 6){
+            _last_action = GameAction::NONE;
             throw std::runtime_error("Not enough money!"); 
         }
         _coins-=7;
         other._is_active = false;
-          // Check for a winner after the coup
-        _last_action = GameAction::COUP;
+          
+        if(dynamic_cast<General*>(&other)){
+            other.uniqe(*this, other);
+        }
+        // Check for a winner after the coup
         try {
             std::string win = _game.winner();
             std::cout << "Game over! Winner: " << win << std::endl;

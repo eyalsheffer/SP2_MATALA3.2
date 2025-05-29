@@ -57,6 +57,9 @@ void Game::check_valid_move( Player& p) const{
     if(!is_current(p)){
         throw std::runtime_error("player is out of turn");
     }
+    if(p.get_coins() > 9 && p.get_lastAction() != GameAction::COUP){
+        throw std::runtime_error("player has 10 coins, must coup");
+    }
 
 }  
 bool Game::have_arrests_options(Player& p) const{

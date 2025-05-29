@@ -9,7 +9,7 @@ class General : public Player{
 
     public:
     General (Game& game,const std::string& name):Player(game ,name){};
-    void uniqe(Player& other) override;
+    void uniqe(Player& action,Player& target) override;
     
 
 };

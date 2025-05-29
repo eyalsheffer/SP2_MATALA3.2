@@ -51,6 +51,7 @@ class Player{
     void coup(Player& other);
     virtual void uniqe(){}
     virtual void uniqe(Player& other){(void)other;}
+    virtual void uniqe(Player& action, Player& target){(void)action; (void)target;}
 
 };
 #endif
