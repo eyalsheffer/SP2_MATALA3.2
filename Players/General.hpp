@@ -8,8 +8,9 @@ class General : public Player{
     private:
 
     public:
-    General (const std::string& name):Player(name){};
-    void cancel_coup();
+    General (Game& game,const std::string& name):Player(game ,name){};
+    void uniqe(Player& action,Player& target) override;
+    
 
 };
 #endif

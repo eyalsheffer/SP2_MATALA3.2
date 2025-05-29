@@ -8,8 +8,8 @@ class Spy : public Player{
     private:
 
     public:
-    Spy (const std::string& name):Player(name){};
-    void reveal(Player& other);
+    Spy (Game& game,const std::string& name):Player(game ,name){}
+    void uniqe(Player& other) override;
 
 };
 #endif

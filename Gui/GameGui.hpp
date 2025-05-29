@@ -7,16 +7,6 @@
 #include <random>
 #include "../Game.hpp"
 
-enum class GameAction {
-    GATHER,
-    TAX, 
-    BRIBE,
-    ARREST,
-    SANCTION,
-    COUP,
-    INVEST,
-    REVEAL,     
-};
 
 struct PlayerGui {
 
@@ -45,8 +35,10 @@ private:
     int blockingPlayer;
     GameAction lastAction;
     int lastActionTarget;
+    int lastPlayer;
     std::vector<std::string> roleNames;
-    bool isBribe;
+    Player* coupTarget;
+    //bool isBribe;
     
     std::vector<int> eligibleBlockers;      // Indices of players who can block
     int currentBlockerIndex;                // Current blocker being asked
@@ -82,11 +74,12 @@ private:
     sf::Text currentBlockerPrompt;
 
     // Victory screen elements
-    bool gameEnded;
+    bool gameEnded = false;
     std::string winnerName;
     sf::RectangleShape victoryOverlay;
     sf::Text victoryTitleText;
     sf::Text winnerText;
+    sf::Text winnerSubText;
     sf::RectangleShape resetButton;
     sf::Text resetButtonText;
     
@@ -99,6 +92,12 @@ private:
     sf::Color buttonColor;
     sf::Color buttonHoverColor;
     sf::Color textColor;
+
+    // Colors for victory screen
+    sf::Color victoryOverlayColor = sf::Color(0, 0, 0, 180); // Semi-transparent black
+    sf::Color victoryTextColor = sf::Color(255, 215, 0); // Gold
+    sf::Color resetButtonColor = sf::Color(34, 139, 34); // Forest green
+    sf::Color resetButtonHoverColor = sf::Color(50, 205, 50); // Lime green
     
     //Reset 
     sf::RectangleShape alwaysResetButton;
@@ -115,6 +114,7 @@ private:
     void initializeActionButtons();
     void setupPlayerPositions();
     void updatePlayerDisplay();
+    void updateActionButtonTexts();
     void updateCurrentPlayerDisplay();
     void updateActionButtons();
     void handleMouseClick(sf::Vector2i mousePos);
@@ -123,7 +123,8 @@ private:
     bool hasGeneralToBlock();
     bool hasGovernorToBlock();
     bool hasJudgeToBlock();
-    bool canPlayerTakeAction();
+    //bool canPlayerTakeAction();
+    //int getActualCurrentIndex();
     bool isValidArrestTarget(Player* target);
     bool isValidSanctionTarget( Player* target);
     void startBlockingSequence();
@@ -132,18 +133,19 @@ private:
     bool isPointInButton(sf::Vector2i point, const sf::RectangleShape& button);
     void executeAction(GameAction action);
     void setupTargetSelection();
-    void nextPlayer();
+    //void nextPlayer();
     void updateInfoPanel(const std::string& message);
   
     void showCurrentBlockerOption();
-    void executeAllowedAction();
+    //void executeAllowedAction();
 
     void updateActionButtonVisibility();
 
+    void initializeVictoryScreen();
     void checkForWinner();
     void showVictoryScreen(const std::string& winner);
-    void resetGame();
     void drawVictoryScreen();
+    void resetGame();
     bool isPointInResetButton(sf::Vector2i point);
     
 public:

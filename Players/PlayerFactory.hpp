@@ -8,13 +8,13 @@
 
 class PlayerFactory {
 public:
-    static Player* createPlayer(const std::string& role, const std::string& name) {
-        if (role == "Governor") return new Governor(name);
-        if (role == "Spy")      return new Spy(name);
-        if (role == "Baron")    return new Baron(name);
-        if (role == "General")  return new General(name);
-        if (role == "Judge")    return new Judge(name);
-        if (role == "Merchant") return new Merchant(name);
-        return new Player(name); 
+    static Player* createPlayer(const std::string& role,Game& game, const std::string& name) {
+        if (role == "Governor") return new Governor(game,name);
+        if (role == "Spy")      return new Spy(game,name);
+        if (role == "Baron")    return new Baron(game,name);
+        if (role == "General")  return new General(game,name);
+        if (role == "Judge")    return new Judge(game,name);
+        if (role == "Merchant") return new Merchant(game,name);
+        return new Player(game,name); 
     }
 };
