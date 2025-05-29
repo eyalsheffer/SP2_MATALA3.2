@@ -176,7 +176,11 @@
         other._is_active = false;
           
         if(dynamic_cast<General*>(&other)){
-            other.uniqe(*this, other);
+             try {
+                other.uniqe(*this, other);
+            } catch (const std::exception& e) {
+                std::cerr << "General failed to block: " << e.what() << std::endl;
+    }
         }
         // Check for a winner after the coup
         try {

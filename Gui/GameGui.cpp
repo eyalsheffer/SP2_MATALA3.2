@@ -390,6 +390,40 @@ void GameGui::updatePlayerDisplay() {
         
     }
 }
+void GameGui::updateActionButtonTexts() {
+    Player* currentPlayer = game->get_players()[game->get_turn()];
+    
+    std::vector<std::string> actionNames = {
+        "Gather (+1)",
+        "Tax (+2)",
+        "Bribe (-4)",
+        "Arrest (+1)",
+        "Sanction (-3)",
+        "Coup (-7)",
+        "", 
+    };
+    
+    // Update the unique action button text based on current player's role
+    if (dynamic_cast<Baron*>(currentPlayer)) {
+        actionNames[6] = "Invest (+3)";
+    } else if (dynamic_cast<Spy*>(currentPlayer)) {
+        actionNames[6] = "Reveal (free)";
+    } else {
+        actionNames[6] = "No Ability";
+    }
+    
+    // Update all button texts
+    for (size_t i = 0; i < actionButtonTexts.size() && i < actionNames.size(); i++) {
+        actionButtonTexts[i].setString(actionNames[i]);
+        
+        // Recenter text in button
+        sf::FloatRect textBounds = actionButtonTexts[i].getLocalBounds();
+        actionButtonTexts[i].setPosition(
+            20 + 70 - textBounds.width / 2,
+            160 + i * 50 + 20 - textBounds.height / 2
+        );
+    }
+}
 
 void GameGui::updateCurrentPlayerDisplay() {
     currentPlayerText.setString("Current Player: " + game->get_players()[game->get_turn()]->get_name());
@@ -406,15 +440,14 @@ void GameGui::handleMouseClick(sf::Vector2i mousePos) {
         resetGame();
         return;
     }
-
-    if (gameEnded && isPointInResetButton(mousePos)) {
-        resetGame();
-        return;
-    }
     if (gameEnded) {
-        return;
+        if (isPointInResetButton(mousePos)) {
+            resetGame();
+        }
+        return; // Don't process other clicks during victory screen
     }
-    if (gamePhase == 0) { // Action selection phase
+
+    if (gamePhase == 0) { // Action selection phase 
         for (size_t i = 0; i < actionButtons.size(); i++) {
             if (isPointInButton(mousePos, actionButtons[i])) {
                 executeAction(availableActions[i]);
@@ -613,7 +646,7 @@ void GameGui::executeTargetedAction(int targetIndex) {
                 actionName = "Coup";
                 coupTarget = target;
                 // Check for blocking after execution
-                if (!target->get_isActive() && hasGeneralToBlock()) {
+                if (players[lastPlayer]->get_lastAction() == GameAction::COUP && hasGeneralToBlock()) {
                     waitingForBlock = true;
                     lastAction = pendingAction;
                     updateInfoPanel(currentPlayer->get_name() + " couped " + target->get_name() + " - Generals can block!");
@@ -992,6 +1025,8 @@ void GameGui::handleBlock() {
         }else if (dynamic_cast<General*>(blocker))
         {
            blocker->uniqe(*players[lastPlayer], *coupTarget);
+           game->set_turn(lastPlayer);
+           game->turn_manager();
 
         }else if (dynamic_cast<Judge*>(blocker))//the turn didnt move yet
         {
@@ -1336,6 +1371,7 @@ void GameGui::updateInfoPanel(const std::string& message) {
 
 void GameGui::updateActionButtonVisibility() {
     Player* currentPlayer = game->get_players()[game->get_turn()];
+    updateActionButtonTexts();
     
     for (size_t i = 0; i < availableActions.size(); i++) {
         bool shouldShow = true;
@@ -1421,6 +1457,43 @@ void GameGui::updateActionButtonVisibility() {
     }
 }
 
+void GameGui::initializeVictoryScreen() {
+    // Victory overlay (semi-transparent background)
+    victoryOverlay.setSize(sf::Vector2f(800, 600));
+    victoryOverlay.setPosition(200, 100);
+    victoryOverlay.setFillColor(victoryOverlayColor);
+    
+    // Victory title
+    victoryTitleText.setString("GAME OVER");
+    if (fontLoaded) victoryTitleText.setFont(font);
+    victoryTitleText.setCharacterSize(48);
+    victoryTitleText.setFillColor(victoryTextColor);
+    victoryTitleText.setStyle(sf::Text::Bold);
+    
+    // Winner text
+    if (fontLoaded) winnerText.setFont(font);
+    winnerText.setCharacterSize(36);
+    winnerText.setFillColor(sf::Color::White);
+    winnerText.setStyle(sf::Text::Bold);
+    
+    // Winner subtitle
+    winnerSubText.setString("Congratulations on your victory!");
+    if (fontLoaded) winnerSubText.setFont(font);
+    winnerSubText.setCharacterSize(20);
+    winnerSubText.setFillColor(sf::Color(200, 200, 200));
+    
+    // Reset button
+    resetButton.setSize(sf::Vector2f(200, 50));
+    resetButton.setPosition(500, 450);
+    resetButton.setFillColor(resetButtonColor);
+    
+    resetButtonText.setString("Play Again");
+    if (fontLoaded) resetButtonText.setFont(font);
+    resetButtonText.setCharacterSize(20);
+    resetButtonText.setFillColor(sf::Color::White);
+    resetButtonText.setStyle(sf::Text::Bold);
+}
+
 void GameGui::checkForWinner() {
     try {
         std::string winner = game->winner();
@@ -1434,16 +1507,41 @@ void GameGui::showVictoryScreen(const std::string& winner) {
     gameEnded = true;
     winnerName = winner;
     
-    // Center the winner text
+    // Update winner text
     winnerText.setString(winner + " WINS!");
-    sf::FloatRect textBounds = winnerText.getLocalBounds();
-    winnerText.setPosition(600 - textBounds.width / 2, 320);
     
-    // Center the title text
+    // Center all text elements
     sf::FloatRect titleBounds = victoryTitleText.getLocalBounds();
     victoryTitleText.setPosition(600 - titleBounds.width / 2, 250);
     
+    sf::FloatRect winnerBounds = winnerText.getLocalBounds();
+    winnerText.setPosition(600 - winnerBounds.width / 2, 320);
+    
+    sf::FloatRect subBounds = winnerSubText.getLocalBounds();
+    winnerSubText.setPosition(600 - subBounds.width / 2, 380);
+    
+    // Center reset button text
+    sf::FloatRect resetBounds = resetButtonText.getLocalBounds();
+    resetButtonText.setPosition(
+        500 + 100 - resetBounds.width / 2,
+        450 + 25 - resetBounds.height / 2
+    );
+    
     updateInfoPanel("GAME OVER! " + winner + " is the winner!");
+}
+
+void GameGui::drawVictoryScreen() {
+    // Draw semi-transparent overlay
+    window.draw(victoryOverlay);
+    
+    // Draw victory text elements
+    window.draw(victoryTitleText);
+    window.draw(winnerText);
+    window.draw(winnerSubText);
+    
+    // Draw reset button
+    window.draw(resetButton);
+    window.draw(resetButtonText);
 }
 
 void GameGui::resetGame() {
@@ -1463,6 +1561,7 @@ void GameGui::resetGame() {
     targetButtonTexts.clear();
     
     // Reset game state
+    game->clear_players();
     game->set_turn(0);
     
     // Reinitialize players
@@ -1480,13 +1579,7 @@ bool GameGui::isPointInResetButton(sf::Vector2i point) {
     sf::FloatRect bounds = resetButton.getGlobalBounds();
     return bounds.contains(static_cast<sf::Vector2f>(point));
 }
-void GameGui::drawVictoryScreen() {
-    window.draw(victoryOverlay);
-    window.draw(victoryTitleText);
-    window.draw(winnerText);
-    window.draw(resetButton);
-    window.draw(resetButtonText);
-}
+
 
 void GameGui::draw() {
     window.clear(backgroundColor);
