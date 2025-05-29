@@ -40,8 +40,8 @@ main.o: main.cpp
 test.o: Test/test.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-valgrind: $(TARGET_MAIN)
-	valgrind --leak-check=full ./$(TARGET_MAIN)
+valgrind: $(TARGET_TEST)
+	valgrind --leak-check=full ./$(TARGET_TEST)
 
 clean:
 	rm -f $(OBJ_PLAYERS) $(OBJ_GUI) $(OBJ_COMMON) $(OBJ_MAIN) $(OBJ_TEST) $(TARGET_MAIN) $(TARGET_TEST)

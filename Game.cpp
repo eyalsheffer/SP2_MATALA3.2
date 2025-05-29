@@ -9,6 +9,8 @@ Game::~Game(){
     for(Player* p : _players){
           delete p;
     }
+    _players.clear();
+    // clear_players();
 }
 Game& Game::instance(){
     static Game instance;
