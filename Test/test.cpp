@@ -1137,8 +1137,8 @@ TEST_CASE("Special Abilities Integration Tests") {
         game.set_turn(0); // Gov1's turn
         gov1->uniqe(*gov2); // Blocks the tax
         CHECK(gov2->get_coins() == 3); // Tax reversed
-        delete gov1;
-        delete gov2;
+        // delete gov1;
+        // delete gov2;
     }
 }
 
